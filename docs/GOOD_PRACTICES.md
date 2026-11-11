@@ -24,6 +24,8 @@
 | Logout deletes only the current device's token | Logging out the laptop doesn't log out the owner's phone | `AuthController::logout()` | 2026-11-11 |
 | Throttle keys are hashed | Usernames aren't stored in plain text in the cache table | `LoginRequest::throttleKey()` | 2026-11-11 |
 | Uploads: type detected from the **content**, size and pixel limits, **no SVG**, random file names | A renamed script or HTML file can't be served from our domain; SVG can run scripts; huge images ("decompression bombs") are refused; a file name can't collide or leak the owner's file names | `StoreUploadRequest`, `UploadController` | 2026-11-11 |
+| Nested ids sent by the client are checked against the parent (a size id must be **this** product's), and the write is also scoped to the parent | The classic IDOR / broken access control bug: saving one product could otherwise rewrite another product's sizes. Two layers: `422` in the request, `whereBelongsTo` in the action | `SaveProductRequest::checkSizes()`, `SaveProduct::syncSizes()` | 2026-11-11 |
+| A rule that protects data the frontend doesn't check yet is still enforced by the API (a quick price change can't make a size cost ≤ 0) | The API is the source of truth (BACKEND_REQUIREMENTS §4); the frontend is told so it can add the same check | `PatchProductRequest` | 2026-11-11 |
 | Image fields accept only our own upload URLs | Nobody can point menu photos at another host, or at a file outside `uploads/` (`..` refused) | `OwnUploadUrl`, `PublicImage::pathFromUrl()` | 2026-11-11 |
 
 ### Data integrity
@@ -62,6 +64,7 @@
 | CI on every PR: Pint, `composer audit`, Pest | A broken or badly formatted change can't be merged unnoticed | `.github/workflows/tests.yml` | 2026-11-11 |
 | CI PHP version = the real minimum (8.4) | `"php": "^8.3"` claimed a version the lock file can't install on | `composer.json`, CI matrix | 2026-11-11 |
 | A safety test is checked by breaking the code once (it must fail without the protection) | A test that passes either way protects nothing | e.g. the `migrate:fresh` test | 2026-11-11 |
+| 422 keys with dots (`optionGroups.0.options.1.name`) are asserted by reading `errors` directly | `assertJsonPath` treats dots as nesting and finds nothing | `ProductControllerTest` | 2026-11-11 |
 | Tests run with `APP_DEBUG=false` | Error bodies are checked in the shape production sends (`{ message }`), never with a stack trace the frontend will never see | `phpunit.xml` | 2026-11-11 |
 | A test for our own normalization must use input only our code changes | Laravel's `TrimStrings` already trims outer spaces and the MySQL collation ignores trailing ones: a "  name " test passed with our code removed. Found by breaking the code once | `CategoryControllerTest` (inner spaces) | 2026-11-11 |
 | Content-type tests use **real files**, not `UploadedFile::fake()` | A fake reports its type from the file name, so "text renamed to .png" would pass a fake test and still be refused (or worse, accepted) on the server | `realUpload()` in `UploadControllerTest` | 2026-11-11 |
