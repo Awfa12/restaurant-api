@@ -48,6 +48,11 @@
             "Composer\\Config::disableProcessTimeout",
             "@php artisan serve"
         ],
+        "cache:build": [
+            "@php artisan config:cache --ansi",
+            "@php artisan route:cache --ansi",
+            "@php artisan event:cache --ansi"
+        ],
         "seed:export": [
             "node --experimental-strip-types --no-warnings database/seeders/data/export.mjs"
         ],

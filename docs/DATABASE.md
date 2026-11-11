@@ -5,7 +5,7 @@
 
 ## 1. Principles
 
-- **MySQL** (local 9.2, CI 8.0, the Hostinger demo MySQL: confirm with `SELECT VERSION()`): nothing version-specific. `utf8mb4` / `utf8mb4_unicode_ci` (Arabic and emoji).
+- **MySQL** (local 9.2, CI 8.0, the Hostinger demo: MariaDB 11.8, which hPanel labels "MySQL", used with the `mysql` driver): nothing version-specific. `utf8mb4` / `utf8mb4_unicode_ci` (Arabic and emoji).
 - **Internal ids are auto-increment.** Categories, products, offers and branches also have a unique **`slug`**, which the API sends as `id`. Foreign keys always use the internal id, so editing a slug changes nothing else (decision 1.2).
 - **Other records** (sizes, phones, banners, reviews) are sent with their internal id as a string (`"12"`), as the contract says.
 - **Order** is a `position` column (`order` is an SQL reserved word), 1…n with no gaps, kept by the move actions inside a transaction. **No unique index** on positions, so a move can swap two rows without a temporary value (decision 1.3).
