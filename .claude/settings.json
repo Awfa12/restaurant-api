@@ -1,0 +1,13 @@
+{
+    "permissions": {
+        "additionalDirectories": [
+            "../restaurant-template"
+        ],
+        "deny": [
+            "Edit(../restaurant-template/**)",
+            "Edit(//c/awfa/projects/R_Project/restaurant-template/**)",
+            "Read(../restaurant-template/.env*)",
+            "Read(//c/awfa/projects/R_Project/restaurant-template/.env*)"
+        ]
+    }
+}
