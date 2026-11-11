@@ -2,7 +2,7 @@
 
 > What this backend is, what's been decided, where it stands, and what's next. Keep it short and current; update it at the end of each feature.
 
-**Last updated:** 2026-11-11 · **Plan:** [BACKEND_PLAN.md](BACKEND_PLAN.md) (phases 0–12) · **Done:** Phase 0 foundation (PR #2) · **Done:** Phase 1 database (PR #3) · **Done:** Phase 3 auth (PR #4) · **Now:** Phase 4 menu: 4a uploads (PR #5), 4b categories (PR #6), 4c products done (branch `feat/phase-4c-products`, 160 tests passing), next 4d public `GET /menu`
+**Last updated:** 2026-11-11 · **Plan:** [BACKEND_PLAN.md](BACKEND_PLAN.md) (phases 0–12) · **Done:** Phase 0 foundation (PR #2) · **Done:** Phase 1 database (PR #3) · **Done:** Phase 3 auth (PR #4) · **Now:** Phase 4 menu: 4a uploads (PR #5), 4b categories (PR #6), 4c products (PR #7), 4d public `GET /menu` done (branch `feat/phase-4d-public-menu`, 165 tests passing): Phase 4 complete
 
 ## 1. What this is
 
@@ -61,19 +61,20 @@ Full details in the contract; the short version:
 | Uploads | ✅ Phase 4a: `POST /admin/uploads` on the `public` disk (`storage/app/public/uploads`, served at `/storage/…`: run `php artisan storage:link` once per machine/server). Image fields accept only our upload URLs (`OwnUploadUrl`). Daily `uploads:prune` |
 | Categories | ✅ Phase 4b: `/admin/categories` list, create, update (name, slug, photo), move, delete (`409` with products). Ordered lists use `App\Actions\OrderedList`; slugs `App\Support\Slugs` |
 | Products | ✅ Phase 4c: `/admin/products` list, create, `PUT` full save (sizes synced by id), `PATCH` quick change, delete; `/admin/best-sellers/{id}/move`. `App\Actions\SaveProduct`, `App\Actions\BestSellers` |
+| Public menu | ✅ Phase 4d: `GET /api/v1/menu` (no token), her `MenuSection[]`, 3 queries |
 | Sessions / queue | `array` / `sync` (no `sessions` or queue tables; the daily jobs run from cron: token prune and uploads prune) |
 | Tests | Admin tests sign in with `actingAsAdmin()` (`tests/Pest.php`, a Sanctum token): Laravel's `actingAs()` uses the session guard, which Sanctum doesn't check here. `APP_DEBUG=false` in `phpunit.xml`, so errors have the production shape (`{ message }`, no trace) |
-| Git | PR #1 (docs), PR #2 (Phase 0), PR #3 (Phase 1), PR #4 (Phase 3), PR #5 (Phase 4a), PR #6 (Phase 4b) merged; remote `github.com/Awfa12/restaurant-api` |
+| Git | PR #1 (docs), PR #2 (Phase 0), PR #3 (Phase 1), PR #4 (Phase 3), PR #5 (Phase 4a), PR #6 (Phase 4b), PR #7 (Phase 4c) merged; remote `github.com/Awfa12/restaurant-api` |
 
 ## 5. Next steps
 
 The full sequence is in [BACKEND_PLAN.md](BACKEND_PLAN.md):
 
-1. ~~Phase 0 foundation~~ (PR #2) · ~~Phase 1 database~~ (PR #3) · ~~Phase 3 auth~~ (PR #4) · ~~Phase 4a uploads~~ (PR #5) · ~~Phase 4b categories~~ (PR #6) · ~~Phase 4c products~~ (branch `feat/phase-4c-products`).
-2. **Contract PR** (the user opens it on `API-CONTRACT.md`): the items in §5.1. Best before her apiRepository work, since 4.1 and 4.2 change how she calls the menu endpoints.
-3. **Phase 4d** public `GET /menu` (closes Phase 4).
-4. **Phase 2:** seeders from the frontend mock data with the same slugs (waiting for the frontend's JSON export, open question 1), the settings rows, and the seeded photos registered in `uploads`. No admin in the seeder.
-5. Staging on Hostinger as soon as auth + `/menu` work; there, `php artisan admin:create` and the shared `FRONTEND_API_KEY` (sent to the frontend privately).
+1. ~~Phase 0 foundation~~ (PR #2) · ~~Phase 1 database~~ (PR #3) · ~~Phase 3 auth~~ (PR #4) · ~~Phase 4a uploads~~ (PR #5) · ~~Phase 4b categories~~ (PR #6) · ~~Phase 4c products~~ (PR #7) · ~~Phase 4d public menu~~ (branch `feat/phase-4d-public-menu`): **Phase 4 done**.
+2. **Contract PR** (the user opens it on `API-CONTRACT.md`): the items in §5.1. Now urgent: the menu endpoints are built, and 4.1 / 4.2 change how she calls them.
+3. **Phase 5, staging on Hostinger**: auth + `/menu` work, so milestone M1 (the frontend switches login and the menu) only needs staging. Blocked on open question 3 (SSH, PHP 8.4, MySQL/MariaDB version, data centre). There: `php artisan admin:create`, `storage:link`, cron, and the shared `FRONTEND_API_KEY` (sent to the frontend privately).
+4. **Phase 2:** seeders from the frontend mock data with the same slugs (waiting for the frontend's JSON export, open question 1), the settings rows, and the seeded photos registered in `uploads`. No admin in the seeder. Needed before staging is useful to her (an empty menu otherwise).
+5. **Phase 6:** offers (reuses `OrderedList`, `Slugs`, `OwnUploadUrl`, the `PUT`/`PATCH` convention).
 
 ### 5.1 Contract changes to propose (one PR on `API-CONTRACT.md`)
 

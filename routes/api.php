@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\Admin\CategoryController;
 use App\Http\Controllers\Api\V1\Admin\ProductController;
 use App\Http\Controllers\Api\V1\Admin\UploadController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\MenuController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -16,6 +17,9 @@ use Illuminate\Support\Facades\Route;
 | ../restaurant-template/.local-docs/API-CONTRACT.md
 |
 */
+
+// Public site (API-CONTRACT §3): no token, hidden data never leaves the server.
+Route::get('menu', MenuController::class)->name('menu');
 
 Route::prefix('auth')->name('auth.')->group(function () {
     // Failed tries are limited inside LoginRequest (5 per minute per username + client IP).
