@@ -252,9 +252,14 @@ cd ~/domains/<demo>/laravel && bash bin/deploy.sh
 Then it does: fetch, `reset --hard origin/<branch>`, `composer install --no-dev`, `migrate --force`,
 `composer cache:build`, `storage:link`, `chmod 775`. It is safe to re-run.
 
-`composer cache:build` clears, then caches config, routes and events. It isn't `php artisan optimize`,
-because that also compiles Blade views, and this API has no `resources/views`, so it fails (the first
-deploy hit this). CI runs the same script on a fresh checkout.
+`composer cache:build` caches config, routes and events, each replacing its old cache. CI runs the same
+script on a fresh checkout. Two commands it deliberately avoids:
+
+- **`php artisan optimize`** also compiles Blade views. This API has no `resources/views`, so it fails
+  (the first deploy hit this).
+- **`php artisan optimize:clear`** also empties the application cache. With `CACHE_STORE=database`,
+  that's the `cache` table holding the login and rate-limit counters, so a deploy would reset them
+  (CI caught it: there, no database exists).
 
 ## 5. Before a demo: reset to clean data
 

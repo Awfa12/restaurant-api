@@ -80,7 +80,11 @@ jobs:
       # The caches bin/deploy.sh builds, on a fresh checkout like the server's: a
       # config or route that can't be cached fails here, not during a deploy.
       # After the tests, then cleared: a cached config would override phpunit.xml.
+      # Needs no database (there is none named in .env here): never optimize:clear,
+      # which also empties the database cache store.
       - name: Build the deploy caches
         run: |
           composer cache:build
-          php artisan optimize:clear
+          php artisan config:clear
+          php artisan route:clear
+          php artisan event:clear
