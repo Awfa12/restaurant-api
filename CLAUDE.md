@@ -9,7 +9,9 @@ Laravel 13 REST API (API only, no web pages) for the Ahl Al Karam (أهل الك
 1. **[docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md):** what this is, the decisions, the current state, and what's next. Read it at the start of every session.
 2. **[docs/BACKEND_PLAN.md](docs/BACKEND_PLAN.md):** the phases (0–12), what each delivers, the validation to port, and the open decisions. Work one phase at a time and update its status.
 3. **The agreed API contract:** `../restaurant-template/.local-docs/API-CONTRACT.md`, the **source of truth** for endpoints, JSON shapes, limits and errors, with `BACKEND_REQUIREMENTS.md` next to it. Read the section relevant to the task. If code and contract disagree, the contract wins: point out the conflict and don't change behaviour silently.
-4. [docs/LARAVEL_API_RECAP.md](docs/LARAVEL_API_RECAP.md): how Sanctum, Resources and FormRequests fit this project, and the Hostinger notes.
+4. [docs/DATABASE.md](docs/DATABASE.md): the tables, keys and delete rules, and how each dashboard method maps to them.
+5. [docs/GOOD_PRACTICES.md](docs/GOOD_PRACTICES.md): every good practice adopted (or declined, with the reason) and the ones still to do.
+6. [docs/LARAVEL_API_RECAP.md](docs/LARAVEL_API_RECAP.md): how Sanctum, Resources and FormRequests fit this project, and the Hostinger notes.
 
 ## The frontend repo is read-only
 
@@ -31,6 +33,7 @@ Laravel 13 REST API (API only, no web pages) for the Ahl Al Karam (أهل الك
 - **Discuss before coding:** before any code change, briefly explain what you'll do, why, and which files change, then **wait for his approval**. Present options and trade-offs for anything hard to reverse: the schema, a new dependency, a contract change.
 - Don't expand scope or start the next step without approval.
 - After a feature: list the files changed and what to test, run the tests and Pint, and update `docs/PROJECT_STATUS.md`.
+- **Act as his senior engineer:** point out anything that isn't good practice (security, data integrity, tests, deployment, process), with the why and a fix, and wait for approval before changing scope. **Every good practice we adopt, decline or postpone goes into [docs/GOOD_PRACTICES.md](docs/GOOD_PRACTICES.md)** in the same change.
 - **Git:** never commit, push or merge unless he asks. Work on branches with PRs, and don't push to `main` directly.
 - **Secrets:** never put credentials, tokens, private phone numbers or `.env` values in code, docs or commits.
 - Communicate in English unless he asks otherwise. Docs and code are in English; user-facing messages are in Arabic.
