@@ -47,7 +47,7 @@ Make the empty project an API project. Branch `chore/phase-0-foundation`.
 - ✅ Errors always JSON for `api/*` (`shouldRenderJsonWhen`, already in the first commit), and `redirectGuestsTo(fn () => null)`: Laravel 13 sends guests to `route('login')` by default, which doesn't exist here and would turn a missing token into a `500`.
 - ✅ `JsonResource::withoutWrapping()` in `AppServiceProvider`.
 - ✅ Health check: Laravel's built-in `/up`.
-- ✅ GitHub Actions (`.github/workflows/tests.yml`): Pint + Pest, PHP 8.3 and 8.4, MySQL 8.0.
+- ✅ GitHub Actions (`.github/workflows/tests.yml`): Pint + Pest, PHP 8.4, MySQL 8.0. **PHP 8.4 is the minimum** (`composer.json` `^8.4`): the lock file (Symfony 8.1, Pest 5, PHPUnit 13) doesn't install on 8.3, as the first CI run showed.
 - ✅ Removed (decision 0.3): welcome page, `routes/web.php`, Vite/Tailwind/npm files, the `tailwindcss-development` skill (and from `boost.json`), npm steps in `composer setup`; `composer dev` = `php artisan serve`.
 - ✅ Tests: `tests/Feature/Api/FoundationTest.php` (Arabic 422 without `Accept`, JSON 401 without/with a bad token, no `data` wrapper, JSON 404, no page at `/`, `/up`). The two Laravel example tests were deleted (approved).
 - ✅ Full suite on the local MySQL test database (7 tests, 2026-11-11); `migrate` run on `restaurant_api`.
@@ -97,7 +97,7 @@ The biggest phase; the public site's main data.
 
 ### Phase 5 — Staging on Hostinger `TODO` · size M
 As soon as Phase 3 + 4 work, so the frontend can test against a real server.
-- Check the plan: SSH, PHP ≥ 8.3, MySQL, EU data centre.
+- Check the plan: SSH, **PHP ≥ 8.4**, MySQL, EU data centre.
 - Subdomain (`api-staging.<domain>`, or a temporary one) with its document root on Laravel's **`public/`**.
 - MySQL database + user; `.env` (staging values, `APP_DEBUG=false`); `php artisan key:generate`, `migrate --force`, `db:seed`.
 - `storage:link`; PHP `upload_max_filesize` / `post_max_size` ≥ 6 MB; HTTPS.

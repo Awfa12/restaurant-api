@@ -48,14 +48,14 @@ Full details in the contract; the short version:
 
 | Item | State |
 |---|---|
-| Laravel | 13.42 (`laravel/framework ^13.17`), PHP `^8.3` (local 8.4.3) |
+| Laravel | 13.42 (`laravel/framework ^13.17`), PHP **`^8.4`** (local 8.4.3). 8.4 is required: the lock file (Symfony 8.1, Pest 5, PHPUnit 13) doesn't install on 8.3 |
 | Created with | `laravel new`: no starter kit, Blade stack (default, unused: API only), Pest 5 |
 | Laravel Boost | 2.2: guidelines (`CLAUDE.md`), skills (`.claude/skills/`: `infer-conventions`, `laravel-best-practices`, `testing-best-practices`), MCP server (`.mcp.json`), Claude Code only. `tailwindcss-development` removed (also from `boost.json`). **Gotcha:** Boost treats the first occurrence of its opening tag in `CLAUDE.md` as the start of its block and replaces everything after it; never write that tag in the project section |
 | API + Sanctum | ✅ Sanctum 4.4 (`install:api`). Routes in `routes/api.php` under **`/api/v1`** (`apiPrefix` in `bootstrap/app.php`), empty until Phase 3. Guests get a JSON `401` (no redirect to a `login` route); errors under `api/*` are always JSON, even without `Accept: application/json`; Resources aren't wrapped in `data` |
 | Database | **MySQL** locally (`restaurant_api`) and for tests (`restaurant_api_test`, `RefreshDatabase` on every feature test), decision 0.1. Collation `utf8mb4_unicode_ci` (also exists on MariaDB). Production: MySQL on Hostinger (engine/version to confirm) |
 | Locale | **`ar`** (default in `config/app.php` and `.env.example`). Fallback messages in `lang/ar/validation.php` (only the rules we use, no `:attribute`) and `lang/ar.json` (the "and N more errors" suffix), decision 0.2 |
 | Web leftovers | Removed (decision 0.3): welcome page, `routes/web.php`, Vite/Tailwind/npm files. `composer dev` runs `php artisan serve` only (no Node, no queue worker) |
-| CI | `.github/workflows/tests.yml`: Pint + Pest on PHP 8.3 and 8.4 against MySQL 8.0, on every PR and push to `main` |
+| CI | `.github/workflows/tests.yml`: Pint + Pest on PHP 8.4 against MySQL 8.0, on every PR and push to `main` |
 | Git | PR #1 (docs) merged; remote `github.com/Awfa12/restaurant-api` |
 
 ## 5. Next steps
@@ -76,7 +76,7 @@ The full sequence is in [BACKEND_PLAN.md](BACKEND_PLAN.md); the first steps:
 
 1. **Frontend:** when will the mock data be exported as JSON for the seeders?
 2. **Both:** which domain? (decides `api.<domain>` and the QR codes)
-3. **Hostinger plan:** SSH access (needed for composer + artisan)? PHP 8.3+ available? Which EU data centre? **MySQL or MariaDB, which version?** (local is MySQL 9.2, CI is MySQL 8.0: avoid 9.x-only features until we know)
+3. **Hostinger plan:** SSH access (needed for composer + artisan)? **PHP 8.4 available?** (required, see §4) Which EU data centre? **MySQL or MariaDB, which version?** (local is MySQL 9.2, CI is MySQL 8.0: avoid 9.x-only features until we know)
 4. **Laravel's built-in English messages:** `401` "Unauthenticated." (as the contract shows), `404` "Not Found", `429` "Too Many Attempts.". Kept as is: the frontend shows its own Arabic text per status. Translate them only if the frontend asks.
 5. **Claude Code guard:** the deny rules in `.claude/settings.json` block the Read/Edit tools on the frontend repo (tested), but not shell commands. Add `Bash(...)` deny patterns or the sandbox if needed.
 6. **From BACKEND_REQUIREMENTS §11:** add the frontend owner as a collaborator on this repo; create the issue labels `backend`, `frontend`, `contract-change`.
