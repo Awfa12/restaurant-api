@@ -62,6 +62,8 @@
 | CI on every PR: Pint, `composer audit`, Pest | A broken or badly formatted change can't be merged unnoticed | `.github/workflows/tests.yml` | 2026-11-11 |
 | CI PHP version = the real minimum (8.4) | `"php": "^8.3"` claimed a version the lock file can't install on | `composer.json`, CI matrix | 2026-11-11 |
 | A safety test is checked by breaking the code once (it must fail without the protection) | A test that passes either way protects nothing | e.g. the `migrate:fresh` test | 2026-11-11 |
+| Tests run with `APP_DEBUG=false` | Error bodies are checked in the shape production sends (`{ message }`), never with a stack trace the frontend will never see | `phpunit.xml` | 2026-11-11 |
+| A test for our own normalization must use input only our code changes | Laravel's `TrimStrings` already trims outer spaces and the MySQL collation ignores trailing ones: a "  name " test passed with our code removed. Found by breaking the code once | `CategoryControllerTest` (inner spaces) | 2026-11-11 |
 | Content-type tests use **real files**, not `UploadedFile::fake()` | A fake reports its type from the file name, so "text renamed to .png" would pass a fake test and still be refused (or worse, accepted) on the server | `realUpload()` in `UploadControllerTest` | 2026-11-11 |
 
 ### Process
