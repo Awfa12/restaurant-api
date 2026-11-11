@@ -1,3 +1,18 @@
+# Never serve docs, scripts, dumps, logs or env files, even if one lands under
+# the web root (from Suwayda-Under-Siege). Photos are webp/png/jpg only.
+#
+# On Hostinger, public_html/.htaccess is a SYMLINK to this file, so this copy is
+# the one that runs. Keep it that way (docs/DEPLOYMENT.md §3.4).
+<FilesMatch "\.(md|markdown|sh|bash|yml|yaml|lock|bak|sql|log|env|ini)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes

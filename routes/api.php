@@ -19,7 +19,10 @@ use Illuminate\Support\Facades\Route;
 */
 
 // Public site (API-CONTRACT §3): no token, hidden data never leaves the server.
-Route::get('menu', MenuController::class)->name('menu');
+// throttle:public = 300 per minute per client (decision 5.5, AppServiceProvider).
+Route::middleware('throttle:public')->group(function () {
+    Route::get('menu', MenuController::class)->name('menu');
+});
 
 Route::prefix('auth')->name('auth.')->group(function () {
     // Failed tries are limited inside LoginRequest (5 per minute per username + client IP).

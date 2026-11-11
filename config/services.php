@@ -30,8 +30,10 @@ return [
 
     // The Next.js server vouches for the browser IP on login with this shared
     // secret (X-Frontend-Key + X-Client-IP). Empty = the header is never trusted.
+    // required = every /api/v1 request needs the key (RequireFrontendKey; on for the demo server).
     'frontend' => [
         'key' => env('FRONTEND_API_KEY'),
+        'required' => (bool) env('API_REQUIRE_FRONTEND_KEY', false),
     ],
 
     'slack' => [
