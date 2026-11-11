@@ -40,8 +40,9 @@ main() {
   php artisan migrate --force --no-interaction
 
   echo "==> rebuilding caches (config, routes, events)"
-  php artisan optimize:clear
-  php artisan optimize
+  # Not `php artisan optimize`: it also compiles Blade views, and this API has
+  # no resources/views folder, so it fails. CI runs the same script.
+  composer cache:build
 
   echo "==> storage link"
   # `|| true`: the link already existing returns non-zero.

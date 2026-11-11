@@ -118,5 +118,5 @@ database/seeders         from the frontend's mock data, same ids
 - `php artisan storage:link` for the uploaded images (if symlinks are blocked, configure the disk to write under `public/` directly).
 - No Redis or queue workers on shared hosting: use the `database` or `file` drivers for cache and rate limiting. Use `sync` queues, which is fine since nothing runs in the background except the daily image cleanup via cron (`schedule:run`).
 - Raise `upload_max_filesize` / `post_max_size` in hPanel's PHP settings to at least 8 MB (5 MB image + form data).
-- Deploy: `bash bin/deploy.sh` over SSH (fetch + reset, `composer install --no-dev -o`, `migrate --force`, `optimize`), decision 5.3. The full runbook is [DEPLOYMENT.md](DEPLOYMENT.md).
+- Deploy: `bash bin/deploy.sh` over SSH (fetch + reset, `composer install --no-dev -o`, `migrate --force`, `composer cache:build`), decision 5.3. Not `php artisan optimize`: it also compiles Blade views, which an API without `resources/views` doesn't have. The full runbook is [DEPLOYMENT.md](DEPLOYMENT.md).
 - `APP_DEBUG=false` in production; `.env` stays outside the public folder.

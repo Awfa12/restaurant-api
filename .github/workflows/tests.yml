@@ -76,3 +76,11 @@ jobs:
 
       - name: Run tests
         run: php artisan test --compact
+
+      # The caches bin/deploy.sh builds, on a fresh checkout like the server's: a
+      # config or route that can't be cached fails here, not during a deploy.
+      # After the tests, then cleared: a cached config would override phpunit.xml.
+      - name: Build the deploy caches
+        run: |
+          composer cache:build
+          php artisan optimize:clear

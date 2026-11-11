@@ -60,8 +60,10 @@ feature branch ─PR─► main ─(ff-only)─► staging ─SSH: bash bin/depl
    never root and never the Suwayda database. Put the password in your password manager.
 4. **Check the engine:** phpMyAdmin → `SELECT VERSION();`.
    - `8.x` is MySQL, the same engine as CI.
-   - `10.x-MariaDB` means hPanel's "MySQL" is really MariaDB. That's fine for the demo, but note it in
-     `docs/PROJECT_STATUS.md`: CI tests on MySQL 8.0, and production must be tested on its real engine.
+   - `10.x-MariaDB` / `11.x-MariaDB` means hPanel's "MySQL" is really MariaDB. The demo is
+     **11.8.9-MariaDB**. Keep `DB_CONNECTION=mysql`: Laravel's `mysql` driver works with MariaDB, and our
+     schema uses nothing that differs (decision 5.4). CI tests on MySQL 8.0, and production must be
+     tested on its real engine.
 
 ### 3.2 SSH and the PHP version
 
@@ -132,8 +134,13 @@ nano .env
 Fill in every `TODO`:
 
 - `APP_URL=https://<demo>`. Image URLs are built from it.
-- The `DB_*` values from §3.1. The host is the one hPanel shows, **never `localhost`**. Put the
-  password in **double quotes** if it has `#`, `$`, a space, `&`, `(`, `)` or `!`. Unquoted, the
+- The `DB_*` values from §3.1. Use **the host hPanel shows** next to the database.
+  - `localhost` connects through a socket file on the web server. It worked on the demo (the
+    database runs on the same machine).
+  - If it fails with `[2002] No such file or directory`, use `127.0.0.1` or the database server's
+    hostname (e.g. `srv2024.hstgr.io`); both connect over TCP. Suwayda's notes say "never
+    `localhost`" because it hit that error.
+- Put the password in **double quotes** if it has `#`, `$`, a space, `&`, `(`, `)` or `!`. Unquoted, the
   value is cut or expanded, and you get "Access denied".
 - `FRONTEND_API_KEY`: generate it on the server with `php -r "echo bin2hex(random_bytes(32)), PHP_EOL;"`,
   and save it in the password manager.
@@ -243,7 +250,11 @@ cd ~/domains/<demo>/laravel && bash bin/deploy.sh
 - the gate is on with no key
 
 Then it does: fetch, `reset --hard origin/<branch>`, `composer install --no-dev`, `migrate --force`,
-`optimize:clear` + `optimize`, `storage:link`, `chmod 775`. It is safe to re-run.
+`composer cache:build`, `storage:link`, `chmod 775`. It is safe to re-run.
+
+`composer cache:build` clears, then caches config, routes and events. It isn't `php artisan optimize`,
+because that also compiles Blade views, and this API has no `resources/views`, so it fails (the first
+deploy hit this). CI runs the same script on a fresh checkout.
 
 ## 5. Before a demo: reset to clean data
 
@@ -251,7 +262,6 @@ Then it does: fetch, `reset --hard origin/<branch>`, `composer install --no-dev`
 cd ~/domains/<demo>/laravel
 php artisan migrate:fresh --seed --force     # allowed because APP_ENV=staging
 php artisan admin:create admin               # the users table was emptied too
-php artisan optimize
 ```
 
 - `migrate:fresh` doesn't delete files: earlier uploads stay in `storage/app/public/uploads` until
@@ -268,7 +278,7 @@ cd ~/domains/<demo>/laravel
 git log --oneline -5
 git reset --hard <last-good-sha>
 composer install --no-dev --optimize-autoloader --no-interaction
-php artisan optimize:clear && php artisan optimize
+composer cache:build
 ```
 
 Then put `staging` back to that commit on GitHub, or fix forward on `main`. For a demo, fixing
@@ -284,7 +294,7 @@ forward is usually simpler. A broken migration is fixed by the §5 reset.
 
 **Rotating `FRONTEND_API_KEY`** (if it leaks or someone leaves the project):
 
-1. Generate a new key on the server and put it in `.env`, then run `php artisan optimize`.
+1. Generate a new key on the server and put it in `.env`, then run `php artisan config:cache`.
 2. Send it to her privately. She updates `FRONTEND_API_KEY` in Vercel and redeploys.
 3. Between steps 1 and 2 the demo refuses her server (`403`), so do this when nobody is demoing.
 4. Update your Postman environment's current value.
@@ -295,12 +305,13 @@ forward is usually simpler. A broken migration is fixed by the §5 reset.
 | --- | --- |
 | Every request returns 500 and there's no log | `.env` missing or unreadable: §3.5. Then `bash bin/deploy.sh`. |
 | `SQLSTATE[HY000] [1045] Access denied` | Wrong or unquoted `DB_PASSWORD`, or a user not linked to the database (hPanel → Databases → Manage users). |
-| `[2002] No such file or directory` | `DB_HOST=localhost`: use the host hPanel shows. |
+| `[2002] No such file or directory` | `DB_HOST=localhost` connects through a socket file the web server doesn't have (the database is elsewhere, or the socket is in another place): use `127.0.0.1` or the database server's hostname. |
 | `composer install` complains about the PHP version | The SSH `php` isn't 8.4: §3.2. |
 | Login works, `/auth/me` returns 401 | The `Authorization` header is dropped: `public_html/.htaccess` must be the symlink (§3.4). |
 | Photos return 404 | `php artisan storage:link`, and the `public_html/storage` symlink. |
-| 403 «ما عندك صلاحية» on every call | `X-Frontend-Key` missing or different from `FRONTEND_API_KEY`. After editing `.env`, run `php artisan optimize`: config is cached. |
-| A `.env` change does nothing | Config is cached: `php artisan optimize:clear && php artisan optimize`. |
+| 403 «ما عندك صلاحية» on every call | `X-Frontend-Key` missing or different from `FRONTEND_API_KEY`. After editing `.env`, run `php artisan config:cache`: config is cached. |
+| A `.env` change does nothing | Config is cached: `php artisan config:cache`. |
+| `bin/deploy.sh` fails at `views` with "resources/views directory does not exist" | An old `deploy.sh` that ran `php artisan optimize` (fixed, see §4). Pull, then run `composer cache:build`, `php artisan storage:link` and `chmod -R 775 storage bootstrap/cache`. |
 | `upload` returns 413 or an empty `422` | `upload_max_filesize` / `post_max_size` below 8M for this site (§3.1). |
 
 ## 9. When the owner buys: production

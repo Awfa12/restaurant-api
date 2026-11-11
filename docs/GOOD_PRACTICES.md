@@ -98,6 +98,7 @@
 | Project rules in `CLAUDE.md` never contain Boost's opening tag | `boost:update` treats its first occurrence as the start of its block and wipes everything after it | CLAUDE.md note | 2026-11-11 |
 | Deploys are manual and guarded: `main` → `staging` with `--ff-only`, then `bash bin/deploy.sh` over SSH; the server resets to `origin/<branch>` | The demo runs exactly what was reviewed and passed CI; a failed step is visible in the terminal; edits on the server can't drift (decision 5.3) | `bin/deploy.sh`, DEPLOYMENT.md §2, §4 | 2026-11-11 |
 | `bin/deploy.sh` runs inside a `main()` function | Bash reads a script as it runs, and `git reset --hard` rewrites this file: a function is parsed whole first, so the new version never runs half old, half new | `bin/deploy.sh` | 2026-11-11 |
+| The deploy caches are one script, `composer cache:build` (config, routes, events; not `optimize`), run by both `bin/deploy.sh` and CI on a fresh checkout | The first demo deploy stopped because `optimize` also compiles Blade views and this API has none: nothing had run the deploy's cache step before the server did. Now a config or route that can't be cached fails the PR | `composer.json`, `bin/deploy.sh`, `.github/workflows/tests.yml` | 2026-11-11 |
 | CI also runs on pushes to `staging`, cancels superseded runs, and has read-only permissions | What the demo runs is tested; no wasted runs; the workflow token can't write to the repo | `.github/workflows/tests.yml` | 2026-11-11 |
 
 ## To do (agreed, not done yet)
@@ -129,4 +130,4 @@
 | hPanel Git integration / webhook auto-deploy | Hard to debug when it fails silently, and no guard rails; the manual `bin/deploy.sh` shows every step (decision 5.3) |
 | Debug output on staging (Suwayda allows it behind Basic Auth) | Nothing hides it here; `bin/deploy.sh` refuses `APP_DEBUG=true` on any server |
 | A separate hosting account for the demo | Not worth paying for before the owner buys: the demo holds seed data only. Production gets its own account (To do) |
-| MariaDB in CI | The demo uses MySQL (decision 5.4); revisit if `SELECT VERSION()` on the server says MariaDB, or for the production host |
+| MariaDB in CI (for now) | The demo is MariaDB 11.8, but our schema uses nothing that differs from MySQL 8.0 (3 `json` columns stored whole, no UUIDs, no JSON queries), so the risk is low (decision 5.4). Revisit before a phase adds JSON queries or UUID columns, and for the production host |
