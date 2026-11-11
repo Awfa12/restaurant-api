@@ -8,3 +8,6 @@ use Illuminate\Support\Facades\Schedule;
 
 // Tokens expired for more than a day (login tokens last 7 days).
 Schedule::command('sanctum:prune-expired --hours=24')->daily();
+
+// Uploaded images no record uses, older than 24 hours (API-CONTRACT §4 Images).
+Schedule::command('uploads:prune --hours=24')->daily();

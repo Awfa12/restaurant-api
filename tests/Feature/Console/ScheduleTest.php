@@ -15,3 +15,12 @@ it('prunes expired login tokens every day', function () {
     expect($prune)->not->toBeNull()
         ->and($prune->expression)->toBe('0 0 * * *');
 });
+
+it('deletes unused uploads every day', function () {
+    $events = collect(app(Schedule::class)->events());
+
+    $prune = $events->first(fn (Event $event) => str_contains((string) $event->command, 'uploads:prune --hours=24'));
+
+    expect($prune)->not->toBeNull()
+        ->and($prune->expression)->toBe('0 0 * * *');
+});

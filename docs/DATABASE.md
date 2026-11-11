@@ -259,7 +259,7 @@ The singleton rows (`settings` × 5, `ordering_settings` × 1) are created by th
 | `width`, `height` | smallint unsigned | returned by `POST /admin/uploads` |
 | `size_bytes` | int unsigned | |
 
-Daily job: delete every upload older than 24 h whose path no image field uses (`categories`, `products`, `offers`, `banners`, and the `about` and `offers_section` settings). Replaced photos are caught by the same check.
+Daily job (`php artisan uploads:prune`): delete every upload older than 24 h whose path no image field uses (`categories`, `products`, `offers`, `banners`, and the `about` and `offers_section` settings). Replaced photos are caught by the same check. The list of image fields lives in `App\Support\ImageReferences`: **a new image field must be added there**, or its photos would be deleted after a day.
 
 ### Laravel's own tables (decision 1.8)
 

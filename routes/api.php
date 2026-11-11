@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Admin\UploadController;
 use App\Http\Controllers\Api\V1\AuthController;
 use Illuminate\Support\Facades\Route;
 
@@ -21,4 +22,9 @@ Route::prefix('auth')->name('auth.')->group(function () {
         Route::post('logout', [AuthController::class, 'logout'])->name('logout');
         Route::get('me', [AuthController::class, 'me'])->name('me');
     });
+});
+
+// Dashboard (API-CONTRACT §4): everything behind the admin's Bearer token.
+Route::prefix('admin')->name('admin.')->middleware('auth:sanctum')->group(function () {
+    Route::post('uploads', [UploadController::class, 'store'])->name('uploads.store');
 });
