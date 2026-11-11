@@ -37,7 +37,8 @@ return [
     |
     */
 
-    'guard' => ['web'],
+    // API only (Bearer tokens): no session guard to check first.
+    'guard' => [],
 
     /*
     |--------------------------------------------------------------------------
@@ -50,7 +51,8 @@ return [
     |
     */
 
-    'expiration' => null,
+    // 7 days (API-CONTRACT §2). Login tokens also get expires_at; this is the backstop.
+    'expiration' => (int) env('SANCTUM_EXPIRATION', 60 * 24 * 7),
 
     /*
     |--------------------------------------------------------------------------

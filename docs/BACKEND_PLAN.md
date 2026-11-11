@@ -68,16 +68,19 @@ Branch `feat/phase-1-database`.
 - Seeders from the frontend mock data **with the same ids** (`src/data/mock/`): about 15 categories + products, 4 offers, 3 banners, 4 reviews, 2 branches, and the singletons.
 - Photos from `../restaurant-template/public/assets/` → `storage/app/public/…`; records store the new URLs.
 - **Contract test (strong check):** the frontend exports what its services return today (e.g. `getMenu()` → `menu.json`). After seeding, `GET /api/v1/menu` must return **the same JSON**. One fixture per public endpoint, added in each area's phase.
-- Admin user from env vars (`ADMIN_USERNAME` / `ADMIN_PASSWORD`), never in the repo (decision 2.1).
+- **No admin user in the seeder** (decision 2.1, decided in Phase 3): the admin is created on each server with `php artisan admin:create`.
 
 **Done when:** `migrate:fresh --seed` reproduces the mock content and ids.
 
-### Phase 3 — Auth `TODO` · size S
-- `POST /auth/login`: one generic Arabic message on wrong credentials (`422`); token valid 7 days (`createToken(..., expiresAt: now()->addDays(7))`).
-- Rate limiter: 5 tries / minute per username + IP → `429` + `Retry-After`.
-- `POST /auth/logout` (deletes the current token, `204`); `GET /auth/me` (`{ name }`, `401` when expired).
-- Daily `sanctum:prune-expired` in the scheduler.
-- Tests: success, wrong password, wrong username (same message), throttling, expired token, logout then `me` → `401`.
+### Phase 3 — Auth `DONE` · size S
+Branch `feat/phase-3-auth`. Decisions 3.1–3.4 (2026-11-11), all as recommended, 3.3 with Option A.
+- ✅ `POST /auth/login` → `{ token, user: { name } }`. Wrong credentials: `422` with `اسم المستخدم أو كلمة السر غلط` on `username` and as `message` (the frontend's text). Usernames normalized like the dashboard (NFC, trimmed, spaces collapsed), case-insensitive. A failed login always takes ≥ 400 ms (`Timebox`), so an unknown username and a wrong password look the same.
+- ✅ **3.2** Rate limit on **failed** tries only: 5 / minute per username + client IP → `429` + `Retry-After` (`محاولات كتير، جرّب بعد دقيقة`); a success clears the count.
+- ✅ **3.3 Option A:** the client IP is the browser's when the Next.js server sends `X-Client-IP` with the right `X-Frontend-Key` (`FRONTEND_API_KEY`, compared with `hash_equals`, must be a valid IP); otherwise the request IP. Works without the headers (then the dashboard shares Vercel's IP).
+- ✅ **3.4** Tokens: `expires_at` = `sanctum.expiration` (7 days, also the config backstop); `sanctum.guard` = `[]` (Bearer only). Daily `sanctum:prune-expired --hours=24` (`routes/console.php`).
+- ✅ `POST /auth/logout` deletes only the current device's token (`204`); `GET /auth/me` → `{ name }`, `401` when expired or deleted.
+- ✅ **3.1 / decision 2.1:** `php artisan admin:create <username> [--name=]`: hidden password prompt (≥ 12 characters, confirmed, never a CLI option). For an existing username it sets the new password and logs out all its devices (the API has no password reset).
+- ✅ Tests: `tests/Feature/Api/V1/AuthControllerTest.php`, `tests/Feature/Console/CreateAdminCommandTest.php`, `tests/Feature/Console/ScheduleTest.php`. The timebox, key check and counter reset were each checked by breaking the code once.
 
 **Frontend can switch:** dashboard login (`services/auth.ts`).
 
@@ -185,7 +188,7 @@ The limits (`PRODUCT_LIMITS`, `OFFER_LIMITS`, …) are constants in that file; c
 | 0.2 | Arabic validation texts | 0 | **Decided 2026-11-11: write `lang/ar` ourselves** for the rules we use (no dependency) · ~~`laravel-lang`~~ |
 | 0.3 | Remove Vite/Tailwind/welcome page | 0 | **Decided 2026-11-11: remove** · ~~keep~~ |
 | 1.1–1.8 | Schema choices | 1 | **Decided 2026-11-11, all as recommended:** hybrid singletons (JSON `settings` + `ordering_settings` row + dine-in on `branches`) · auto-increment id + unique slug, product/offer slugs checked across both tables by a rule · `position` columns, no unique index · `sizes_label` + `product_sizes` · banner targets as FKs, null on delete · images stored as paths + `uploads` table · restrict/cascade/null-on-delete as in DATABASE.md §4 · default Laravel tables trimmed. Details: [DATABASE.md](DATABASE.md) |
-| 2.1 | Creating the admin account | 2 | Seeder from env vars · `php artisan admin:create` command |
+| 2.1 | Creating the admin account | 3 | **Decided 2026-11-11: `php artisan admin:create`** (hidden prompt, doubles as password reset) · ~~seeder from env vars~~ (plain-text password left in `.env`) |
 | 4.1 | Slug generation from Arabic | 4b | `Str::slug` (test on real names) · owner always types it |
 | 7.1 | Banner `href` in the public response | 7 | Backend resolves the link · frontend builds it from the target |
 

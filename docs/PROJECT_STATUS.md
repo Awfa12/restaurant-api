@@ -2,7 +2,7 @@
 
 > What this backend is, what's been decided, where it stands, and what's next. Keep it short and current; update it at the end of each feature.
 
-**Last updated:** 2026-11-11 · **Plan:** [BACKEND_PLAN.md](BACKEND_PLAN.md) (phases 0–12) · **Done:** Phase 0 foundation (PR #2) · **Done:** Phase 1 database (branch `feat/phase-1-database`, 18 tests passing) · **Next:** Phase 2 seed data or Phase 3 auth
+**Last updated:** 2026-11-11 · **Plan:** [BACKEND_PLAN.md](BACKEND_PLAN.md) (phases 0–12) · **Done:** Phase 0 foundation (PR #2) · **Done:** Phase 1 database (PR #3) · **Done:** Phase 3 auth (branch `feat/phase-3-auth`, 48 tests passing) · **Next:** Phase 2 seed data (waiting for the frontend's export) or Phase 4 menu
 
 ## 1. What this is
 
@@ -51,23 +51,39 @@ Full details in the contract; the short version:
 | Laravel | 13.42 (`laravel/framework ^13.17`), PHP **`^8.4`** (local 8.4.3). 8.4 is required: the lock file (Symfony 8.1, Pest 5, PHPUnit 13) doesn't install on 8.3 |
 | Created with | `laravel new`: no starter kit, Blade stack (default, unused: API only), Pest 5 |
 | Laravel Boost | 2.2: guidelines (`CLAUDE.md`), skills (`.claude/skills/`: `infer-conventions`, `laravel-best-practices`, `testing-best-practices`), MCP server (`.mcp.json`), Claude Code only. `tailwindcss-development` removed (also from `boost.json`). **Gotcha:** Boost treats the first occurrence of its opening tag in `CLAUDE.md` as the start of its block and replaces everything after it; never write that tag in the project section |
-| API + Sanctum | ✅ Sanctum 4.4 (`install:api`). Routes in `routes/api.php` under **`/api/v1`** (`apiPrefix` in `bootstrap/app.php`), empty until Phase 3. Guests get a JSON `401` (no redirect to a `login` route); errors under `api/*` are always JSON, even without `Accept: application/json`; Resources aren't wrapped in `data` |
+| API + Sanctum | ✅ Sanctum 4.4 (`install:api`), Bearer only (`sanctum.guard = []`), tokens 7 days. Routes in `routes/api.php` under **`/api/v1`** (`apiPrefix` in `bootstrap/app.php`). Guests get a JSON `401` (no redirect to a `login` route); errors under `api/*` are always JSON, even without `Accept: application/json`; Resources aren't wrapped in `data` |
 | Database | **MySQL** locally (`restaurant_api`) and for tests (`restaurant_api_test`, `RefreshDatabase` on every feature test), decision 0.1. Collation `utf8mb4_unicode_ci` (also exists on MariaDB). Production: MySQL on Hostinger (engine/version to confirm) |
 | Locale | **`ar`** (default in `config/app.php` and `.env.example`). Fallback messages in `lang/ar/validation.php` (only the rules we use, no `:attribute`) and `lang/ar.json` (the "and N more errors" suffix), decision 0.2 |
 | Web leftovers | Removed (decision 0.3): welcome page, `routes/web.php`, Vite/Tailwind/npm files. `composer dev` runs `php artisan serve` only (no Node, no queue worker) |
 | CI | `.github/workflows/tests.yml`: Pint + Pest on PHP 8.4 against MySQL 8.0, on every PR and push to `main` |
 | Schema | ✅ Phase 1: [DATABASE.md](DATABASE.md) implemented (11 tables + `users`, `personal_access_tokens`, `cache`). Models in `app/Models`, enums in `app/Enums`, factories with states. No seed data yet (`DatabaseSeeder` is empty on purpose) |
-| Sessions / queue | `array` / `sync` (no `sessions` or queue tables; the daily job runs from cron) |
-| Git | PR #1 (docs) and PR #2 (Phase 0) merged; remote `github.com/Awfa12/restaurant-api` |
+| Auth | ✅ Phase 3: `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`. Admin created with `php artisan admin:create <username>` (also the password reset). Failed logins limited per username + client IP; the client IP comes from the frontend's `X-Client-IP` only with the right `X-Frontend-Key` (`FRONTEND_API_KEY`) |
+| Sessions / queue | `array` / `sync` (no `sessions` or queue tables; the daily jobs run from cron: token prune today) |
+| Git | PR #1 (docs), PR #2 (Phase 0), PR #3 (Phase 1) merged; remote `github.com/Awfa12/restaurant-api` |
 
 ## 5. Next steps
 
 The full sequence is in [BACKEND_PLAN.md](BACKEND_PLAN.md):
 
-1. ~~Phase 0 foundation~~ (PR #2) · ~~Phase 1 database~~ (branch `feat/phase-1-database`).
-2. **Phase 2:** seeders from the frontend mock data with the same slugs (waiting for the frontend's JSON export, open question 1), the settings rows, and the admin account from env vars.
-3. **Phase 3:** auth (login / logout / me, rate limit) + its Pest tests. Doesn't need the seed data: it can go before Phase 2.
-4. Staging on Hostinger as soon as auth + `/menu` work.
+1. ~~Phase 0 foundation~~ (PR #2) · ~~Phase 1 database~~ (PR #3) · ~~Phase 3 auth~~ (branch `feat/phase-3-auth`).
+2. **Contract PR** (the user opens it on `API-CONTRACT.md`): the items in §5.1.
+3. **Phase 2:** seeders from the frontend mock data with the same slugs (waiting for the frontend's JSON export, open question 1) and the settings rows. No admin in the seeder.
+4. **Phase 4:** menu (categories, products, uploads, public `GET /menu`).
+5. Staging on Hostinger as soon as auth + `/menu` work; there, `php artisan admin:create` and the shared `FRONTEND_API_KEY` (sent to the frontend privately).
+
+### 5.1 Contract changes to propose (one PR on `API-CONTRACT.md`)
+
+From Phase 3 (auth):
+- `POST /auth/login` accepts two optional headers from the Next.js server: `X-Client-IP` (the browser IP, from `x-forwarded-for`) and `X-Frontend-Key` (`FRONTEND_API_KEY`, a shared secret in server-only env vars). With the right key, the 5-failures limit counts per browser; without it, all dashboard logins share Vercel's IP.
+- Wrong credentials: `422` with the generic message on `username` and as the top-level `message`.
+- The dashboard's logout must call `POST /auth/logout` (deleting the cookie alone leaves the token valid until it expires).
+- Changing the admin password (`admin:create` on the server) logs out every device.
+
+From Phase 1 (database, [DATABASE.md](DATABASE.md) §6):
+- A banner target or delivery phone that no longer exists is sent by the admin GET with an empty id (`""`).
+- Sizes, phones, banners and reviews get new numeric ids at seeding.
+- `PATCH /admin/products/{id}` also takes `bestSellerOrder` (the undo of «شيل من الأكثر مبيعاً»).
+- `GET /admin/ordering` returns `dineIn.branches` for every branch.
 
 ## 6. Open questions
 
