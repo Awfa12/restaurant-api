@@ -3,7 +3,16 @@ name: tests
 on:
   pull_request:
   push:
-    branches: [main]
+    # staging = what the demo server runs (docs/DEPLOYMENT.md §2).
+    branches: [main, staging]
+
+# A newer push to the same branch makes the older run pointless: cancel it.
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   tests:
@@ -17,7 +26,8 @@ jobs:
 
     services:
       mysql:
-        # MySQL 8.0: the closest to Hostinger (MySQL 8 / MariaDB 10.x, to confirm). Throwaway CI container.
+        # MySQL 8.0, like the demo server's MySQL (confirm with SELECT VERSION(), docs/DEPLOYMENT.md §3.1).
+        # Throwaway CI container.
         image: mysql:8.0
         env:
           MYSQL_ROOT_PASSWORD: root

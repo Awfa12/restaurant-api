@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\RequireFrontendKey;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -15,6 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // API only: there is no login page, so a guest gets a JSON 401 instead of a redirect to route('login').
         $middleware->redirectGuestsTo(fn () => null);
+
+        // First in the api group, so a refused request never reaches the database.
+        $middleware->api(prepend: [RequireFrontendKey::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

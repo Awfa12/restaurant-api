@@ -113,10 +113,10 @@ database/seeders         from the frontend's mock data, same ids
 ## 6. Hostinger shared hosting notes
 
 - Check your plan has **SSH** (needed for `composer` and `artisan`). Set PHP to the newest version hPanel offers that the Laravel version supports.
-- Put the API on a subdomain (`api.<domain>`) whose document root is Laravel's **`public/`** folder. Never expose the project root.
-- Keep Laravel's `public/.htaccess` as is. Its `HTTP_AUTHORIZATION` rewrite is what lets the Bearer token reach Laravel on Apache.
+- Never expose the project root. Hostinger may not let you move the document root, so the repo sits in a sibling `laravel/` folder and `public_html/` holds only a shim `index.php` plus symlinks (decision 5.1, [DEPLOYMENT.md](DEPLOYMENT.md) §1).
+- Keep the `HTTP_AUTHORIZATION` rewrite in `public/.htaccess` (and `public_html/.htaccess` a symlink to it). It is what lets the Bearer token reach Laravel on Apache.
 - `php artisan storage:link` for the uploaded images (if symlinks are blocked, configure the disk to write under `public/` directly).
 - No Redis or queue workers on shared hosting: use the `database` or `file` drivers for cache and rate limiting. Use `sync` queues, which is fine since nothing runs in the background except the daily image cleanup via cron (`schedule:run`).
-- Raise `upload_max_filesize` / `post_max_size` in hPanel's PHP settings to at least 6 MB (5 MB image + form data).
-- Deploy: hPanel Git integration or `git pull` over SSH, then `composer install --no-dev -o`, `php artisan migrate --force`, `php artisan config:cache route:cache`.
+- Raise `upload_max_filesize` / `post_max_size` in hPanel's PHP settings to at least 8 MB (5 MB image + form data).
+- Deploy: `bash bin/deploy.sh` over SSH (fetch + reset, `composer install --no-dev -o`, `migrate --force`, `optimize`), decision 5.3. The full runbook is [DEPLOYMENT.md](DEPLOYMENT.md).
 - `APP_DEBUG=false` in production; `.env` stays outside the public folder.

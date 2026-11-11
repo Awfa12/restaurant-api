@@ -65,7 +65,7 @@ PR #3 (branch `feat/phase-1-database`).
 **Done when:** `DATABASE.md` is approved, and `php artisan migrate:fresh` runs on MySQL.
 
 ### Phase 2 — Seed data `DONE` · size S
-Branch `feat/phase-2-seed`. **We export the mock data ourselves** (the frontend won't): open question 1 answered.
+PR #10 (branch `feat/phase-2-seed`). **We export the mock data ourselves** (the frontend won't): open question 1 answered.
 - ✅ **Export** (dev-only, plain Node, no npm: decision 0.3 stays): `composer seed:export` = `node --experimental-strip-types database/seeders/data/export.mjs [../restaurant-template]`. Imports `src/data/mock/*.ts` read-only and writes 8 JSON files (her exact shapes) + the 21 photos they use (`database/seeders/data/images/`, 1.8 MB) + `source.json` (the frontend commit). Deterministic (a re-run with no mock change gives no diff). **Refuses** before writing when a mock file imports anything but types, an export is missing, a photo is missing, or a branch staff phone isn't one of the restaurant's public numbers (real staff numbers are never committed). Re-run after mock changes, review the diff, commit.
 - ✅ **Seeders** (`DatabaseSeeder` → `MenuSeeder`, `OffersSeeder`, `BannersSeeder`, `ReviewsSeeder`, `HomeContentSeeder`, `RestaurantSeeder`, one transaction): slugs kept (categories, products, offers, branches: `qanawat-road`, `al-mehwari`); sizes, phones, banners, reviews get database ids; `delivery.phoneId`, `phone.branchId`, `dineIn.branchId` and the banner targets remapped. The mock's shared size group becomes 3 rows per product. Best sellers (no order in the mock) numbered 1…4 in her `sortBestSellers` order. The 5 settings rows + the ordering row.
 - ✅ **Photos** (`Support\SeedImages`): copied to the public disk as `uploads/seed-<content hash>.webp` and registered in `uploads` (one upload per file, even when an offer and a banner share it), so `OwnUploadUrl` accepts them and `uploads:prune` keeps them. Deleted again if the seeding fails.
@@ -98,18 +98,20 @@ The biggest phase; the public site's main data. Decisions 4.1–4.4 agreed 2026-
 
 **Frontend can switch:** the public menu, best sellers, cart catalog, product pages; dashboard menu, categories, products, best sellers, photos.
 
-### Phase 5 — Staging on Hostinger `TODO` · size M
-As soon as Phase 3 + 4 work, so the frontend can test against a real server.
-- Check the plan: SSH, **PHP ≥ 8.4**, MySQL, EU data centre.
-- Subdomain (`api-staging.<domain>`, or a temporary one) with its document root on Laravel's **`public/`**.
-- MySQL database + user; `.env` (staging values, `APP_DEBUG=false`); `php artisan key:generate`, `migrate --force`, `db:seed`.
-- `storage:link`; PHP `upload_max_filesize` / `post_max_size` ≥ 6 MB; HTTPS.
-- Cron: `* * * * * php artisan schedule:run` (prune tokens, image cleanup).
-- Deploy steps written in `docs/DEPLOY.md` (git pull, `composer install --no-dev -o`, migrate, `config:cache`, `route:cache`).
-- Check the `Authorization` header reaches Laravel (Apache: Laravel's `public/.htaccess` handles it).
-- Send the frontend, **privately**: the staging URL and an admin account. They add the image host to `next.config.ts`.
+### Phase 5 — Demo server (staging) on Hostinger `IN PROGRESS` · size M
+Branch `feat/phase-5-staging`. Decisions 5.1–5.6 (2026-11-11, §6). **Purpose:** show the product to the restaurant owner. Seed data only; if he buys, production gets its own hosting (Phase 12). Hostinger Premium (shared), PHP 8.4, MySQL, Frankfurt. The method is the user's Suwayda-Under-Siege setup, adapted to an API.
+- ✅ **5.1 Layout:** the repo cloned over SSH (read-only deploy key of its own) into `~/domains/<demo>/laravel/`, next to `public_html/`, which holds only an `index.php` shim and two symlinks (`.htaccess`, `storage`). The code and `.env` are never reachable from the web.
+- ✅ **5.3 `bin/deploy.sh`** (manual, over SSH): refuses `main`, a missing `.env`, `APP_ENV` local/testing/empty, `APP_DEBUG=true`, an empty `APP_KEY`, and the gate without a key; then fetch + `reset --hard`, `composer install --no-dev`, `migrate --force`, `optimize`, `storage:link`, `chmod`. Wrapped in `main()` so the reset can't change the script mid-run. Branch flow `main` → `staging` (`--ff-only`).
+- ✅ **5.2** `APP_ENV=staging` (strict mode on, `migrate:fresh --seed` allowed to reset the demo), `APP_DEBUG=false`, daily logs kept 14 days: `.env.staging.example`.
+- ✅ **5.5** `throttle:public`: 300 requests / minute per client (the browser's IP when the frontend vouches for it) on `GET /menu` and later public routes; `429` with the contract's Arabic text and `Retry-After`.
+- ✅ **5.6** `API_REQUIRE_FRONTEND_KEY`: with it on, every `/api/v1` request needs `X-Frontend-Key` (`403` «ما عندك صلاحية» otherwise; `/up` stays open; fails closed). The shared key check lives in `App\Support\FrontendKey` (also used by the login IP).
+- ✅ `public/.htaccess` denies `.md .sh .yml .lock .sql .log .env .ini …` over HTTP. CI also runs on pushes to `staging`.
+- ✅ Tests: `tests/Feature/Http/Middleware/RequireFrontendKeyTest.php`, the `throttle:public` group in `tests/Feature/Providers/AppServiceProviderTest.php`. Both checked by removing the wiring once.
+- ✅ Runbook: [DEPLOYMENT.md](DEPLOYMENT.md) (hPanel, SSH, deploy key, shim, `.env`, first deploy, cron, smoke tests, demo reset, rollback, known Hostinger problems).
+- ⬜ On the server (the user): subdomain, PHP settings, database, `SELECT VERSION()`, deploy key, clone, `.env`, first deploy, `db:seed --force`, `admin:create`, cron, smoke tests.
+- ⬜ Sent to the frontend **privately**: the URL, `FRONTEND_API_KEY` (sent on **every** request to the demo), a test admin account; she adds the image host to `images.remotePatterns` and sets Vercel's region to `fra1`. Contract note on the key and the public rate limit: PROJECT_STATUS §5.2.
 
-**Done when:** the frontend's preview deployment logs in and shows the menu from staging.
+**Done when:** the frontend's preview deployment logs in and shows the menu from the demo server.
 
 ### Phase 6 — Offers `TODO` · size M
 - Public `GET /offers` (section + active offers, `null` when the section is off).
@@ -145,6 +147,7 @@ The trickiest rules.
 **After Phase 11:** every area of the frontend can run on the API.
 
 ### Phase 12 — Production launch `TODO` · size M
+- Only once the owner buys. **Its own hosting account** (the demo shares an account with another site, accepted for the demo only); [DEPLOYMENT.md](DEPLOYMENT.md) §9 lists what changes.
 - Domain bought → `api.<domain>`; production database and `.env`; real content seeded or entered.
 - Backups: check Hostinger's backup frequency, and add a daily database dump if it isn't daily.
 - Logs: `LOG_CHANNEL=daily` with a retention limit (shared hosting disk).
@@ -197,6 +200,12 @@ The limits (`PRODUCT_LIMITS`, `OFFER_LIMITS`, …) are constants in that file; c
 | 4.2 | Full save vs quick change | 4c | **Decided 2026-11-11: `PUT` = full save (missing optional fields cleared), `PATCH` = quick change.** Her full forms drop `undefined` keys, so a `PATCH` could never remove a photo or the sizes. Same convention later for offers, banners, reviews |
 | 4.3 | Image fields | 4a | **Decided 2026-11-11: only URLs of our own uploads** (`OwnUploadUrl`) |
 | 4.4 | Upload handling | 4a | **Decided 2026-11-11: checks only** (type by content, 5 MB, 4000 px, no SVG), no re-encoding (the dashboard already sends ≤ 800 px WebP) |
+| 5.1 | Where the code lives on Hostinger | 5 | **Decided 2026-11-11: the Suwayda-Under-Siege layout:** repo in a sibling `laravel/` folder, `public_html/` = shim + symlinks · ~~document root on `public/`~~ (Hostinger may not allow it) · ~~repo inside `public_html` + deny rules~~ (one mistake exposes `.env`) |
+| 5.2 | Demo server environment | 5 | **Decided 2026-11-11: `APP_ENV=staging`, `APP_DEBUG=false`** (no Basic Auth can hide debug pages; strict mode stays on; the demo can be reset with `migrate:fresh --seed`) · ~~`APP_ENV=production`~~ |
+| 5.3 | How to deploy | 5 | **Decided 2026-11-11: manual `bash bin/deploy.sh` over SSH, from a read-only deploy key** (like Suwayda: every step visible, guarded) · ~~hPanel Git integration / webhook auto-deploy~~ (fails silently, no guard rails) |
+| 5.4 | CI database engine | 5 | **Decided 2026-11-11: stays MySQL 8.0:** the demo uses MySQL. Check with `SELECT VERSION()`, since hPanel can label MariaDB as "MySQL" · ~~MariaDB 10.5 in CI~~ |
+| 5.5 | Public rate limit | 5 | **Decided 2026-11-11: 300 / minute per client** (`throttle:public`) |
+| 5.6 | Keeping the demo private | 5 | **Decided 2026-11-11: `API_REQUIRE_FRONTEND_KEY`:** every `/api/v1` request needs `X-Frontend-Key` · ~~Basic Auth~~ (same `Authorization` header as the Bearer tokens) · ~~no gate~~ |
 | 7.1 | Banner `href` in the public response | 7 | Backend resolves the link · frontend builds it from the target |
 
 A decision that changes the API's behaviour also goes into `API-CONTRACT.md` (PR to the frontend repo).

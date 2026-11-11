@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Api\V1;
 
 use App\Models\User;
+use App\Support\FrontendKey;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Support\Facades\Hash;
@@ -116,24 +117,12 @@ class LoginRequest extends FormRequest
     }
 
     /**
-     * The browser's IP when the Next.js server vouches for it, otherwise the
-     * IP the request came from (Vercel's, for dashboard traffic).
-     *
-     * The frontend sends X-Client-IP with X-Frontend-Key (a shared secret,
-     * FRONTEND_API_KEY). Without the right key the header is ignored, so a
-     * direct caller can't pick its own IP.
+     * The browser's IP when the Next.js server vouches for it (X-Client-IP with
+     * X-Frontend-Key), otherwise the IP the request came from. See FrontendKey.
      */
     public function clientIp(): string
     {
-        $expectedKey = config('services.frontend.key');
-        $sentKey = $this->header('X-Frontend-Key');
-        $forwardedIp = $this->header('X-Client-IP');
-
-        $isTrusted = is_string($expectedKey) && $expectedKey !== ''
-            && is_string($sentKey) && hash_equals($expectedKey, $sentKey)
-            && filter_var($forwardedIp, FILTER_VALIDATE_IP) !== false;
-
-        return $isTrusted ? $forwardedIp : (string) $this->ip();
+        return FrontendKey::clientIp($this);
     }
 
     /**
