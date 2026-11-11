@@ -2,7 +2,7 @@
 
 Laravel 13 REST API (API only, no web pages) for the Ahl Al Karam (أهل الكرم) restaurant website. The frontend is a separate Next.js repo, at `../restaurant-template` on this machine.
 
-> Keep project rules **above** the `<laravel-boost-guidelines>` block: Boost regenerates that block when it updates.
+> Keep project rules **above** the Laravel Boost guidelines block below: Boost regenerates that block when it updates. Never write Boost's opening tag anywhere else in this file: Boost takes the first occurrence as the start of its block and replaces everything after it.
 
 ## Start here
 
