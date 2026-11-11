@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Admin\BestSellerController;
 use App\Http\Controllers\Api\V1\Admin\CategoryController;
+use App\Http\Controllers\Api\V1\Admin\ProductController;
 use App\Http\Controllers\Api\V1\Admin\UploadController;
 use App\Http\Controllers\Api\V1\AuthController;
 use Illuminate\Support\Facades\Route;
@@ -35,4 +37,12 @@ Route::prefix('admin')->name('admin.')->middleware('auth:sanctum')->group(functi
     Route::patch('categories/{category:slug}', [CategoryController::class, 'update'])->name('categories.update');
     Route::delete('categories/{category:slug}', [CategoryController::class, 'destroy'])->name('categories.destroy');
     Route::post('categories/{category:slug}/move', [CategoryController::class, 'move'])->name('categories.move');
+
+    // {product} is the slug. PUT = whole product, PATCH = quick change from the list (decision 4.2).
+    Route::get('products', [ProductController::class, 'index'])->name('products.index');
+    Route::post('products', [ProductController::class, 'store'])->name('products.store');
+    Route::put('products/{product:slug}', [ProductController::class, 'update'])->name('products.update');
+    Route::patch('products/{product:slug}', [ProductController::class, 'patch'])->name('products.patch');
+    Route::delete('products/{product:slug}', [ProductController::class, 'destroy'])->name('products.destroy');
+    Route::post('best-sellers/{product:slug}/move', [BestSellerController::class, 'move'])->name('best-sellers.move');
 });
