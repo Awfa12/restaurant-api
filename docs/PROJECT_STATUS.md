@@ -2,7 +2,7 @@
 
 > What this backend is, what's been decided, where it stands, and what's next. Keep it short and current; update it at the end of each feature.
 
-**Last updated:** 2026-11-11 · **Plan:** [BACKEND_PLAN.md](BACKEND_PLAN.md) (phases 0–12) · **Done:** Phase 0 foundation (PR #2) · **Done:** Phase 1 database (PR #3) · **Done:** Phase 3 auth (PR #4) · **Now:** Phase 4 menu: 4a uploads (PR #5), 4b categories (PR #6), 4c products (PR #7), 4d public `GET /menu` done (branch `feat/phase-4d-public-menu`, 165 tests passing): Phase 4 complete
+**Last updated:** 2026-11-11 · **Plan:** [BACKEND_PLAN.md](BACKEND_PLAN.md) (phases 0–12) · **Done:** Phase 0 foundation (PR #2) · **Done:** Phase 1 database (PR #3) · **Done:** Phase 3 auth (PR #4) · **Done:** Phase 4 menu: 4a uploads (PR #5), 4b categories (PR #6), 4c products (PR #7), 4d public `GET /menu` (PR #8; 165 tests passing) · **Contract amended** with Phases 1, 3 and 4 (frontend PR #39, merged) · **Next:** Phase 5 staging, Phase 2 seeders
 
 ## 1. What this is
 
@@ -20,7 +20,7 @@ The frontend repo is a **read-only reference** from this repo's sessions (`.clau
 |---|---|
 | **The agreed API contract** (endpoints, field limits, 422 keys, errors, hosting): **source of truth** | `.local-docs/API-CONTRACT.md` |
 | The product, entities, cross-record rules, stable ids, seed data, public visibility rules | `.local-docs/BACKEND_REQUIREMENTS.md` |
-| Why the contract is the way it is | `.local-docs/DECISIONS.md` (entry 2026-11-11) |
+| Why the contract is the way it is | `.local-docs/DECISIONS.md` (entries 2026-11-11: the agreement, and "Contract amendments from the backend build") |
 | Exact JSON shapes (our Resources must match) | `src/types/menu.ts`, `content.ts`, `order.ts`, `dashboard.ts` |
 | Seed content (same ids in our seeders) | `src/data/mock/*.ts`; photos in `public/assets/` |
 | Validation rules + the Arabic messages to port | `src/lib/dashboard/validation.ts` |
@@ -28,19 +28,20 @@ The frontend repo is a **read-only reference** from this repo's sessions (`.clau
 | Every dashboard write (one interface, ~30 methods) | `src/lib/dashboard/repository.ts` |
 | How the frontend turns our errors into messages | `src/lib/api/errors.ts` |
 
-## 3. Decisions (agreed 2026-11-11, frontend PR #38)
+## 3. Decisions (agreed 2026-11-11, frontend PR #38; amended with the backend build, frontend PR #39)
 
 Full details in the contract; the short version:
 
 - **Separate repos.** No shared code; the HTTP contract is the only link. A contract change = a PR on `API-CONTRACT.md` in the frontend repo, reviewed by the other side, **before or with** the backend code. (The Claude GitHub integration has no write access to the frontend repo: the user opens those PRs himself.)
 - **Server to server.** Only the Next.js server calls this API (never the browser) → no CORS, no CSRF, no Sanctum SPA cookies.
-- **Auth:** Sanctum personal access tokens, `Authorization: Bearer`, valid **7 days**; login limited to 5 tries/min per username + IP (`429` + `Retry-After`). One admin user.
+- **Auth:** Sanctum personal access tokens, `Authorization: Bearer`, valid **7 days**; login limited to 5 **failed** tries/min per username + client IP (`429` + `Retry-After`; the browser IP via `X-Client-IP` + `X-Frontend-Key`). Logout goes through `POST /auth/logout`. One admin user, created with `admin:create`.
 - **JSON:** **camelCase**, exactly the frontend types; **not wrapped** in `data`; empty optional fields **left out** (not `null`); ids always **strings**.
-- **Public ids = slugs** for categories, products, offers, branches. Slugs are suggested from the Arabic name, editable by the owner, never changed by themselves. Product + offer slugs are unique **across both tables** (shared `/menu/<slug>` URL space). Keep the branch ids `qanawat-road` and `al-mehwari` (printed in QR codes).
-- **Lists inside a record are saved by id, never deleted and recreated:** product sizes (cart lines store `optionId`), phones (`ordering.delivery.phoneId`), branches (QR codes). Sent with id → update; `id: ""` → create; missing → delete. One transaction.
+- **Public ids = slugs** for categories, products, offers, branches. An optional `slug` in the body (lowercase kebab-case, ≤ 80); empty on create → a neutral id (`item-3f9a1c2b`), empty on update → kept; never changed by itself (transliteration rejected, decision 4.1). Sizes, phones, banners and reviews: database ids as strings. Product + offer slugs are unique **across both tables** (shared `/menu/<slug>` URL space). Keep the branch ids `qanawat-road` and `al-mehwari` (printed in QR codes).
+- **Lists inside a record are saved by id, never deleted and recreated:** product sizes (cart lines store `optionId`), phones (`ordering.delivery.phoneId`), branches (QR codes). Sent with id → update; `id: ""` → create; missing → delete; an id of another parent → `422`. One transaction.
+- **`PUT` = whole record** (missing optional field cleared), **`PATCH` = partial** (missing = unchanged, `null` = removed). Creates answer `201`.
 - **Ordering:** `POST /admin/{resource}/{id}/move { direction: "up" | "down" }` returns the whole list in order (categories, offers, banners, reviews, best sellers).
 - **Errors:** Laravel defaults, messages **always Arabic** (locale fixed to `ar`). `409` = a business rule refused the change (always with an Arabic message); no edit-conflict detection. Image too large: `422` on `image` (> 5 MB) or bare `413` (over PHP's limit).
-- **Images:** `public` disk on `api.<domain>/storage/…`, max 5 MB, WebP/PNG/JPG; uploads unused after 24 h deleted by a daily scheduled job.
+- **Images:** `public` disk on `api.<domain>/storage/…`, max 5 MB, WebP/PNG/JPG (checked from the content, never SVG); image fields accept only our upload URLs; uploads unused after 24 h deleted by a daily scheduled job.
 - **Hosting:** Hostinger web (shared) plan, EU data centre, `api.<domain>` (domain not bought yet). Frontend sets its Vercel function region near it.
 - **Delivery order:** auth → categories + products + uploads → offers → banners → reviews → hero + about → site info → ordering. Each area goes to **staging** first; then the frontend switches that area.
 
@@ -64,43 +65,22 @@ Full details in the contract; the short version:
 | Public menu | ✅ Phase 4d: `GET /api/v1/menu` (no token), her `MenuSection[]`, 3 queries |
 | Sessions / queue | `array` / `sync` (no `sessions` or queue tables; the daily jobs run from cron: token prune and uploads prune) |
 | Tests | Admin tests sign in with `actingAsAdmin()` (`tests/Pest.php`, a Sanctum token): Laravel's `actingAs()` uses the session guard, which Sanctum doesn't check here. `APP_DEBUG=false` in `phpunit.xml`, so errors have the production shape (`{ message }`, no trace) |
-| Git | PR #1 (docs), PR #2 (Phase 0), PR #3 (Phase 1), PR #4 (Phase 3), PR #5 (Phase 4a), PR #6 (Phase 4b), PR #7 (Phase 4c) merged; remote `github.com/Awfa12/restaurant-api` |
+| Git | PR #1 (docs), PR #2 (Phase 0), PR #3 (Phase 1), PR #4 (Phase 3), PR #5 (Phase 4a), PR #6 (Phase 4b), PR #7 (Phase 4c), PR #8 (Phase 4d) merged; remote `github.com/Awfa12/restaurant-api` |
 
 ## 5. Next steps
 
 The full sequence is in [BACKEND_PLAN.md](BACKEND_PLAN.md):
 
-1. ~~Phase 0 foundation~~ (PR #2) · ~~Phase 1 database~~ (PR #3) · ~~Phase 3 auth~~ (PR #4) · ~~Phase 4a uploads~~ (PR #5) · ~~Phase 4b categories~~ (PR #6) · ~~Phase 4c products~~ (PR #7) · ~~Phase 4d public menu~~ (branch `feat/phase-4d-public-menu`): **Phase 4 done**.
-2. **Contract PR** (the user opens it on `API-CONTRACT.md`): the items in §5.1. Now urgent: the menu endpoints are built, and 4.1 / 4.2 change how she calls them.
-3. **Phase 5, staging on Hostinger**: auth + `/menu` work, so milestone M1 (the frontend switches login and the menu) only needs staging. Blocked on open question 3 (SSH, PHP 8.4, MySQL/MariaDB version, data centre). There: `php artisan admin:create`, `storage:link`, cron, and the shared `FRONTEND_API_KEY` (sent to the frontend privately).
-4. **Phase 2:** seeders from the frontend mock data with the same slugs (waiting for the frontend's JSON export, open question 1), the settings rows, and the seeded photos registered in `uploads`. No admin in the seeder. Needed before staging is useful to her (an empty menu otherwise).
-5. **Phase 6:** offers (reuses `OrderedList`, `Slugs`, `OwnUploadUrl`, the `PUT`/`PATCH` convention).
+1. ~~Phase 0 foundation~~ (PR #2) · ~~Phase 1 database~~ (PR #3) · ~~Phase 3 auth~~ (PR #4) · ~~Phase 4a uploads~~ (PR #5) · ~~Phase 4b categories~~ (PR #6) · ~~Phase 4c products~~ (PR #7) · ~~Phase 4d public menu~~ (PR #8): **Phase 4 done**. ~~Contract PR~~ (frontend PR #39, merged: §5.1).
+2. **Phase 5, staging on Hostinger**: auth + `/menu` work, so milestone M1 (the frontend switches login and the menu) only needs staging. Blocked on open question 3 (SSH, PHP 8.4, MySQL/MariaDB version, data centre). There: `php artisan admin:create`, `storage:link`, cron, and the shared `FRONTEND_API_KEY` (sent to the frontend privately).
+3. **Phase 2:** seeders from the frontend mock data with the same slugs (waiting for the frontend's JSON export, open question 1), the settings rows, and the seeded photos registered in `uploads`. No admin in the seeder. Needed before staging is useful to her (an empty menu otherwise).
+4. **Phase 6:** offers (reuses `OrderedList`, `Slugs`, `OwnUploadUrl`, the `PUT`/`PATCH` convention).
 
-### 5.1 Contract changes to propose (one PR on `API-CONTRACT.md`)
+### 5.1 Contract changes from Phases 1, 3 and 4: done
 
-From Phase 3 (auth):
-- `POST /auth/login` accepts two optional headers from the Next.js server: `X-Client-IP` (the browser IP, from `x-forwarded-for`) and `X-Frontend-Key` (`FRONTEND_API_KEY`, a shared secret in server-only env vars). With the right key, the 5-failures limit counts per browser; without it, all dashboard logins share Vercel's IP.
-- Wrong credentials: `422` with the generic message on `username` and as the top-level `message`.
-- The dashboard's logout must call `POST /auth/logout` (deleting the cookie alone leaves the token valid until it expires).
-- Changing the admin password (`admin:create` on the server) logs out every device.
+Merged as **frontend PR #39** (2026-11-11). Every item that used to be listed here (login headers and failed-tries limit, logout, slugs with neutral ids, `PUT`/`PATCH`, `201`, category `PATCH`, own-upload image URLs, foreign size ids, `bestSellerOrder`, the size-price rule, `""` for gone references, every branch in `GET /admin/ordering`) is now in `API-CONTRACT.md`, with the reasons in DECISIONS ("Contract amendments from the backend build") and the frontend tasks in API-CONTRACT §7.
 
-From Phase 4 (menu, decisions 4.1–4.4):
-- **Slugs (replaces "suggested from the Arabic name"):** create/update bodies of categories, products, offers and branches take an optional `slug` (lowercase Latin kebab-case, ≤ 80, unique; products and offers checked against each other). Empty → a neutral id (`item-3f9a1c2b`, `cat-…`). Automatic transliteration was tested and rejected (`فروج` → `frog`).
-- **`PUT /admin/products/{id}` = full save** (a missing optional field such as `image`, `imageStyle` or `optionGroups` is cleared); **`PATCH` = quick change** (`price`, `isAvailable`, `isBestSeller`, `bestSellerOrder` only). Her `saveProduct` calls `PUT`, `updateProduct` calls `PATCH`. Same convention later for offers, banners and reviews.
-- Creates answer `201`; `POST /admin/uploads` answers `201 { url, width, height }`.
-- Categories: `PATCH /admin/categories/{id}` takes `name?`, `slug?`, `image?` (one endpoint for her `renameCategory` and `setCategoryImage`); an empty `slug` keeps the current one. Category names are unique after trimming and collapsing spaces (`422`: `في قسم بنفس الاسم`).
-- Image fields accept only URLs returned by `POST /admin/uploads` (`422`: `الصورة مش من الصور المرفوعة، ارفعها من جديد`).
-- A size id that belongs to another product → `422` on `optionGroups.0.options.<i>.id` (`هالحجم مش تابع لهالصنف، حدّث الصفحة`).
-- Products: `POST /admin/products` also accepts `bestSellerOrder` (a place for a re-created best seller); `PUT` ignores it (the place is kept). `PATCH` ignores every field but the four quick ones. The best-seller photo rule answers with the form text on `POST`/`PUT` and the quick text (`… ضيف صورة أول.`) on `PATCH`.
-- **New rule (not in the frontend's checks):** a `PATCH` price that would make a size cost ≤ 0 → `422` on `price` (`في حجم سعره بيصير صفر أو أقل بهالسعر، عدّل الأحجام من صفحة الصنف`). Her `checkProductQuickChanges` could add the same check.
-- `POST /admin/best-sellers/{id}/move` for a product that isn't a best seller → `409` (`هالصنف مش بالأكثر مبيعاً. حدّث الصفحة.`, her draft's text).
-- The size group in responses always has `id: "size"`, `required: true`, `maxSelect: 1` (what her form builds); those fields are ignored on input.
-
-From Phase 1 (database, [DATABASE.md](DATABASE.md) §6):
-- A banner target or delivery phone that no longer exists is sent by the admin GET with an empty id (`""`).
-- Sizes, phones, banners and reviews get new numeric ids at seeding.
-- `PATCH /admin/products/{id}` also takes `bestSellerOrder` (the undo of «شيل من الأكثر مبيعاً»).
-- `GET /admin/ordering` returns `dineIn.branches` for every branch.
+Found while checking her code (in that PR): her `ProductForm` gives new sizes a made-up id (`size-xxxxxxxx`) instead of `id: ""`, so our `422` on foreign size ids would refuse a new size. It's on her §7 list; keep the API rule as it is.
 
 ## 6. Open questions
 
@@ -116,4 +96,4 @@ From Phase 1 (database, [DATABASE.md](DATABASE.md) §6):
 - [GOOD_PRACTICES.md](GOOD_PRACTICES.md): the good practices adopted, declined and still to do (updated with every change that adds one).
 - [DATABASE.md](DATABASE.md): tables, keys, delete rules, dashboard coverage.
 - [LARAVEL_API_RECAP.md](LARAVEL_API_RECAP.md): Sanctum tokens, API Resources, FormRequests, where logic goes, Hostinger shared-hosting notes.
-- Earlier discussion notes (outside both repos, historical): `../backend-notes/` (the backend's response to the draft contract, in English and Arabic, and the PR #38 description).
+- Earlier discussion notes (outside both repos, historical): `../backend-notes/` (the backend's response to the draft contract, in English and Arabic, and the PR #38 and PR #39 descriptions).

@@ -310,7 +310,7 @@ Every method of the dashboard's `DashboardRepository` (`src/lib/dashboard/reposi
 
 Reads: the dashboard loads everything (hidden items included) through the admin GETs; the home tiles (`summary.ts`) are counts over that data, so nothing extra is stored. The ordering form lists **every** branch (from site info) with its dine-in setting, which is why those settings can be branch columns: the admin `GET /admin/ordering` returns `dineIn.branches` for all branches, in branch order.
 
-## 6. For the contract (PR with the Phase 4 / 7 code)
+## 6. For the contract (done: in API-CONTRACT since frontend PR #39)
 
 - A banner target or the delivery phone that no longer exists is sent by the admin GET with an empty id (`""`).
 - Sizes, phones, banners and reviews get new numeric ids at seeding (mock ids like `regular`, `phone-1`, `samer` don't survive). Already what the contract says; worth telling the frontend.
