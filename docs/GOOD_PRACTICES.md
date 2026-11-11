@@ -23,6 +23,8 @@
 | Tokens expire (7 days) and are pruned daily; Bearer only (`sanctum.guard = []`) | A stolen token stops working; the token table doesn't grow; no session guard is consulted | `config/sanctum.php`, `routes/console.php` | 2026-11-11 |
 | Logout deletes only the current device's token | Logging out the laptop doesn't log out the owner's phone | `AuthController::logout()` | 2026-11-11 |
 | Throttle keys are hashed | Usernames aren't stored in plain text in the cache table | `LoginRequest::throttleKey()` | 2026-11-11 |
+| Uploads: type detected from the **content**, size and pixel limits, **no SVG**, random file names | A renamed script or HTML file can't be served from our domain; SVG can run scripts; huge images ("decompression bombs") are refused; a file name can't collide or leak the owner's file names | `StoreUploadRequest`, `UploadController` | 2026-11-11 |
+| Image fields accept only our own upload URLs | Nobody can point menu photos at another host, or at a file outside `uploads/` (`..` refused) | `OwnUploadUrl`, `PublicImage::pathFromUrl()` | 2026-11-11 |
 
 ### Data integrity
 
@@ -60,6 +62,7 @@
 | CI on every PR: Pint, `composer audit`, Pest | A broken or badly formatted change can't be merged unnoticed | `.github/workflows/tests.yml` | 2026-11-11 |
 | CI PHP version = the real minimum (8.4) | `"php": "^8.3"` claimed a version the lock file can't install on | `composer.json`, CI matrix | 2026-11-11 |
 | A safety test is checked by breaking the code once (it must fail without the protection) | A test that passes either way protects nothing | e.g. the `migrate:fresh` test | 2026-11-11 |
+| Content-type tests use **real files**, not `UploadedFile::fake()` | A fake reports its type from the file name, so "text renamed to .png" would pass a fake test and still be refused (or worse, accepted) on the server | `realUpload()` in `UploadControllerTest` | 2026-11-11 |
 
 ### Process
 
@@ -78,6 +81,7 @@
 | Separate MySQL users for staging and production, never `root`, each limited to its own database | A leaked staging `.env` can't touch production | Phase 5 / 12 |
 | `APP_DEBUG=false` and `LOG_CHANNEL=daily` with a retention limit on servers | Debug pages leak config; logs fill a shared-hosting disk | Phase 5 / 12 |
 | Daily database backups (check Hostinger's, add a dump if not daily) | The menu and settings exist only in this database | Phase 12 |
+| Strip EXIF (GPS, camera) from JPEG uploads | The dashboard re-encodes photos to WebP in the browser (no EXIF), but a JPEG sent straight to the API keeps it. Low risk (admin only); needs an image library (GD/Imagick on Hostinger to check) | Later, if direct uploads become common |
 | Rotate `FRONTEND_API_KEY` if it ever leaks (new value in both env vars) | A leaked key only lets someone fake the IP used for the login limit, but it should still be replaced | Whoever notices; procedure in `docs/DEPLOY.md` (Phase 5) |
 | Shell (`Bash`) deny rules, or the sandbox, for the frontend repo | Only the Read/Edit tools are blocked today; a shell command could still read its `.env` or commit there | Proposed, waiting for a decision (PROJECT_STATUS open question 5) |
 
@@ -89,4 +93,6 @@
 | Unique indexes on `position` columns | A move would need a temporary-value swap; the actions keep 1…n in a transaction and tests check it (decision 1.3) |
 | Admin account from `ADMIN_USERNAME` / `ADMIN_PASSWORD` env vars in a seeder | Leaves the password in plain text in the server's `.env` (decision 2.1 → `admin:create`) |
 | Trusting `X-Forwarded-For` (or Vercel as a trusted proxy) for the login IP | Vercel's outgoing IPs aren't fixed, and a public API can't tell a real proxy from an attacker (decision 3.3 → shared-secret header) |
+| Slugs transliterated from Arabic (`Str::slug`) | Tested on the real menu: `شاورما جاج` → `shaorma-gag`, `فروج` → `frog`. Public URLs and QR codes deserve better (decision 4.1 → optional `slug`, otherwise a neutral id) |
+| One `PATCH` for both full saves and quick changes | Her forms drop empty optional keys, so a photo or the sizes could never be removed (decision 4.2 → `PUT` full, `PATCH` quick) |
 | `throttle` middleware for the login limit | Counts successful logins too: the owner could lock themselves out with a few devices (decision 3.2) |

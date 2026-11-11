@@ -84,12 +84,12 @@ Branch `feat/phase-3-auth`. Decisions 3.1–3.4 (2026-11-11), all as recommended
 
 **Frontend can switch:** dashboard login (`services/auth.ts`).
 
-### Phase 4 — Menu: categories, products, uploads `TODO` · size L (split into 4a–4d)
-The biggest phase; the public site's main data.
-- **4a Public `GET /menu`:** categories in order with their products and sizes; empty categories left out; unavailable products included. Contract test against the frontend fixture.
-- **4b Categories (admin):** list, create (last in order), rename, photo (`image: null` removes), move up/down, delete (`409` while it has products). Slug suggested from the Arabic name (test `Str::slug` on real names: decision 4.1).
-- **4c Products (admin):** create, full save, partial `PATCH` (price, `isAvailable`, `isBestSeller`), delete. Sizes synced by id. Best sellers: turning on → last; off → renumber; needs a photo; move up/down. Product slugs unique across products and offers.
-- **4d Uploads:** `POST /admin/uploads` (WebP/PNG/JPG, ≤ 5 MB, **no SVG**: it can carry scripts), random file names, returns `{ url, width, height }`. Daily job deletes uploads no record uses after 24 h.
+### Phase 4 — Menu: categories, products, uploads `IN PROGRESS` · size L (split into 4a–4d)
+The biggest phase; the public site's main data. Decisions 4.1–4.4 agreed 2026-11-11 (§6). Order changed from the first plan: uploads first, because categories and products validate their images against them. One branch + PR per step.
+- **4a Uploads `DONE`** (branch `feat/phase-4a-uploads`): `POST /admin/uploads` (multipart `image`) → `201 { url, width, height }`. WebP / PNG / JPG **detected from the content**, ≤ 5 MB, ≤ 4000 px per side, **no SVG** (it can carry scripts), random file names, Arabic messages. `OwnUploadUrl` rule (decision 4.3): an image field must be the URL of one of our uploads; `PublicImage` converts URL ↔ path. `php artisan uploads:prune` (daily): unused uploads older than 24 h; every image field is listed in `App\Support\ImageReferences`.
+- **4b Categories (admin):** list, create (last in order), rename, slug, photo (`image: null` removes), move up/down, delete (`409` while it has products: `ما فيك تحذف قسم فيه أصناف (N). انقلها لقسم تاني أو احذفها أول.`). Optional `slug`, otherwise a neutral id (decision 4.1). Shared `MoveInList` action (reused by offers, banners, reviews).
+- **4c Products (admin):** list, create, **`PUT` full save** (a missing optional field is cleared), **`PATCH` quick change** (`price`, `isAvailable`, `isBestSeller`, `bestSellerOrder`) (decision 4.2), delete. Sizes synced by id; a size id of **another product** → `422`. Best sellers: turning on → last (or the place sent by undo); off → renumber; needs a photo; move up/down. Product slugs unique across products and offers.
+- **4d Public `GET /menu`:** `[{ category, products }]` (her `MenuSection[]`): categories in order, empty ones left out, unavailable products included, sizes eager-loaded (no N+1). Contract test against the frontend fixture once Phase 2 has it.
 - Validation: `checkProductInput`, `checkProductQuickChanges`, `validateCategoryName`, `validatePrice`.
 
 **Frontend can switch:** the public menu, best sellers, cart catalog, product pages; dashboard menu, categories, products, best sellers, photos.
@@ -189,7 +189,10 @@ The limits (`PRODUCT_LIMITS`, `OFFER_LIMITS`, …) are constants in that file; c
 | 0.3 | Remove Vite/Tailwind/welcome page | 0 | **Decided 2026-11-11: remove** · ~~keep~~ |
 | 1.1–1.8 | Schema choices | 1 | **Decided 2026-11-11, all as recommended:** hybrid singletons (JSON `settings` + `ordering_settings` row + dine-in on `branches`) · auto-increment id + unique slug, product/offer slugs checked across both tables by a rule · `position` columns, no unique index · `sizes_label` + `product_sizes` · banner targets as FKs, null on delete · images stored as paths + `uploads` table · restrict/cascade/null-on-delete as in DATABASE.md §4 · default Laravel tables trimmed. Details: [DATABASE.md](DATABASE.md) |
 | 2.1 | Creating the admin account | 3 | **Decided 2026-11-11: `php artisan admin:create`** (hidden prompt, doubles as password reset) · ~~seeder from env vars~~ (plain-text password left in `.env`) |
-| 4.1 | Slug generation from Arabic | 4b | `Str::slug` (test on real names) · owner always types it |
+| 4.1 | Slug generation from Arabic | 4b | **Decided 2026-11-11: optional `slug` in the body, otherwise a neutral id** (`item-3f9a1c2b`, `cat-…`) · ~~`Str::slug`~~ (tested on the real names: `شاورما جاج` → `shaorma-gag`, `فروج` → `frog`) · ~~owner always types it~~ (blocks creating until her slug field exists) |
+| 4.2 | Full save vs quick change | 4c | **Decided 2026-11-11: `PUT` = full save (missing optional fields cleared), `PATCH` = quick change.** Her full forms drop `undefined` keys, so a `PATCH` could never remove a photo or the sizes. Same convention later for offers, banners, reviews |
+| 4.3 | Image fields | 4a | **Decided 2026-11-11: only URLs of our own uploads** (`OwnUploadUrl`) |
+| 4.4 | Upload handling | 4a | **Decided 2026-11-11: checks only** (type by content, 5 MB, 4000 px, no SVG), no re-encoding (the dashboard already sends ≤ 800 px WebP) |
 | 7.1 | Banner `href` in the public response | 7 | Backend resolves the link · frontend builds it from the target |
 
 A decision that changes the API's behaviour also goes into `API-CONTRACT.md` (PR to the frontend repo).
