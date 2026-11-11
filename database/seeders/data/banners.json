@@ -1,0 +1,51 @@
+[
+    {
+        "id": "shawarma-4-plus-1",
+        "eyebrow": "عرض الأسبوع",
+        "title": "كل 4 شاورما\n+ وحدة مجاناً",
+        "image": {
+            "src": "/assets/imgs/offers/shawarma-4-plus-1.webp",
+            "alt": "سندويشات شاورما"
+        },
+        "action": {
+            "label": "شوف العروض",
+            "target": {
+                "kind": "offers"
+            }
+        },
+        "isActive": true
+    },
+    {
+        "id": "grilled-chicken",
+        "eyebrow": "الأكثر طلباً",
+        "title": "فروج\nالشوارية",
+        "image": {
+            "src": "/assets/imgs/menu/grilled-chicken.webp",
+            "alt": "فروج مشوي"
+        },
+        "action": {
+            "label": "اطلب الآن",
+            "target": {
+                "kind": "category",
+                "categoryId": "chicken"
+            }
+        },
+        "isActive": true
+    },
+    {
+        "id": "chicken-cola",
+        "eyebrow": "عرض الفروج",
+        "title": "مع كل فروج\nلتر ببسي مجاناً",
+        "image": {
+            "src": "/assets/imgs/offers/chicken-cola.webp",
+            "alt": "فروج مشوي مع مشروب"
+        },
+        "action": {
+            "label": "شوف العروض",
+            "target": {
+                "kind": "offers"
+            }
+        },
+        "isActive": true
+    }
+]

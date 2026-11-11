@@ -1,0 +1,277 @@
+{
+    "categories": [
+        {
+            "id": "sandwiches",
+            "name": "سندويشات",
+            "image": "/assets/imgs/categories/sandwiches.webp",
+            "order": 1
+        },
+        {
+            "id": "meals",
+            "name": "وجبات",
+            "image": "/assets/imgs/categories/meals.webp",
+            "order": 2
+        },
+        {
+            "id": "chicken",
+            "name": "فروج",
+            "image": "/assets/imgs/categories/chickens.webp",
+            "order": 3
+        },
+        {
+            "id": "drinks",
+            "name": "مشروبات",
+            "order": 4
+        }
+    ],
+    "products": [
+        {
+            "id": "chicken-shawarma",
+            "categoryId": "sandwiches",
+            "name": "شاورما جاج",
+            "description": "شاورما دجاج متبّل على السيخ، ملفوفة بخبز الصاج.",
+            "ingredients": [
+                "دجاج متبّل",
+                "ثوم",
+                "مخلل",
+                "بطاطا",
+                "خبز صاج"
+            ],
+            "price": 250,
+            "image": "/assets/imgs/menu/chicken-shawarma.webp",
+            "isBestSeller": false,
+            "isAvailable": true,
+            "optionGroups": [
+                {
+                    "id": "size",
+                    "name": "الحجم",
+                    "required": true,
+                    "maxSelect": 1,
+                    "options": [
+                        {
+                            "id": "regular",
+                            "name": "عادي",
+                            "priceDelta": 0
+                        },
+                        {
+                            "id": "double",
+                            "name": "دبل",
+                            "priceDelta": 100
+                        },
+                        {
+                            "id": "double-samoon",
+                            "name": "دبل بخبز السمون",
+                            "shortName": "دبل سمون",
+                            "priceDelta": 150
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "meat-shawarma",
+            "categoryId": "sandwiches",
+            "name": "شاورما لحم",
+            "description": "لحم متبّل بخلطة أهل الكرم الخاصة مع الطحينة.",
+            "ingredients": [
+                "لحم متبّل",
+                "طحينة",
+                "بندورة",
+                "بقدونس",
+                "بصل",
+                "خبز صاج"
+            ],
+            "price": 300,
+            "image": "/assets/imgs/menu/meat-shawarma.webp",
+            "isBestSeller": false,
+            "isAvailable": true,
+            "optionGroups": [
+                {
+                    "id": "size",
+                    "name": "الحجم",
+                    "required": true,
+                    "maxSelect": 1,
+                    "options": [
+                        {
+                            "id": "regular",
+                            "name": "عادي",
+                            "priceDelta": 0
+                        },
+                        {
+                            "id": "double",
+                            "name": "دبل",
+                            "priceDelta": 100
+                        },
+                        {
+                            "id": "double-samoon",
+                            "name": "دبل بخبز السمون",
+                            "shortName": "دبل سمون",
+                            "priceDelta": 150
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "crispy",
+            "categoryId": "sandwiches",
+            "name": "كرسبي",
+            "description": "قطع صدر دجاج مقرمشة بخلطة البهارات الخاصة.",
+            "ingredients": [
+                "قطع صدر مقرمشة",
+                "ثوم",
+                "مخلل",
+                "خبز سمون"
+            ],
+            "price": 350,
+            "image": "/assets/imgs/menu/crispy.webp",
+            "isBestSeller": false,
+            "isAvailable": true
+        },
+        {
+            "id": "zinger",
+            "categoryId": "sandwiches",
+            "name": "زنجر",
+            "description": "قطع زنجر حارة مع جبنة سايحة.",
+            "ingredients": [
+                "قطع زنجر حارة",
+                "جبنة سايحة",
+                "شرائح جامبون",
+                "كول سلو",
+                "خبز سمون"
+            ],
+            "price": 400,
+            "image": "/assets/imgs/menu/zinger.webp",
+            "isBestSeller": false,
+            "isAvailable": true
+        },
+        {
+            "id": "fries",
+            "categoryId": "sandwiches",
+            "name": "سندويشة بطاطا",
+            "description": "بطاطا مقلية مقرمشة مع الكاتشب والكول سلو بخبز السمون.",
+            "ingredients": [
+                "بطاطا مقلية",
+                "كاتشب",
+                "كول سلو",
+                "مايونيز",
+                "مخلل",
+                "خبز سمون"
+            ],
+            "price": 250,
+            "image": "/assets/imgs/menu/fries.webp",
+            "isBestSeller": false,
+            "isAvailable": true
+        },
+        {
+            "id": "chicken-shawarma-meal",
+            "categoryId": "meals",
+            "name": "وجبة شاورما جاج",
+            "description": "شاورما دجاج مقطّعة مع البطاطا والثوم والمخلل.",
+            "ingredients": [
+                "شاورما جاج مقطّعة",
+                "بطاطا",
+                "ثوم",
+                "مخلل"
+            ],
+            "price": 450,
+            "image": "/assets/imgs/menu/chicken-shawarma-meal.webp",
+            "isBestSeller": true,
+            "isAvailable": true
+        },
+        {
+            "id": "meat-shawarma-meal",
+            "categoryId": "meals",
+            "name": "وجبة شاورما لحم",
+            "description": "شاورما لحم مقطّعة مع الطحينة والبطاطا.",
+            "ingredients": [
+                "شاورما لحم مقطّعة",
+                "طحينة",
+                "بطاطا",
+                "مخلل"
+            ],
+            "price": 500,
+            "image": "/assets/imgs/menu/meat-shawarma-meal.webp",
+            "isBestSeller": true,
+            "isAvailable": true
+        },
+        {
+            "id": "crispy-meal",
+            "categoryId": "meals",
+            "name": "وجبة كرسبي",
+            "description": "قطع كرسبي مقرمشة مع البطاطا والثوم.",
+            "ingredients": [
+                "قطع كرسبي",
+                "بطاطا",
+                "ثوم",
+                "مخلل"
+            ],
+            "price": 550,
+            "image": "/assets/imgs/menu/crispy-meal.webp",
+            "isBestSeller": false,
+            "isAvailable": true
+        },
+        {
+            "id": "zinger-meal",
+            "categoryId": "meals",
+            "name": "وجبة زنجر",
+            "description": "قطع زنجر حارة مع جبنة سايحة وبطاطا.",
+            "ingredients": [
+                "قطع زنجر حارة",
+                "جبنة سايحة",
+                "بطاطا",
+                "كول سلو"
+            ],
+            "price": 600,
+            "image": "/assets/imgs/menu/zinger-meal.webp",
+            "isBestSeller": true,
+            "isAvailable": true
+        },
+        {
+            "id": "grilled-chicken",
+            "categoryId": "chicken",
+            "name": "فروج مشوي",
+            "description": "فروج كامل مشوي على الفحم، يقدَّم مع الثوم والبطاطا.",
+            "ingredients": [
+                "فروج كامل",
+                "ثوم",
+                "بطاطا",
+                "مخلل",
+                "خبز"
+            ],
+            "price": 1250,
+            "image": "/assets/imgs/menu/grilled-chicken.webp",
+            "isBestSeller": true,
+            "isAvailable": true
+        },
+        {
+            "id": "broasted-chicken",
+            "categoryId": "chicken",
+            "name": "فروج بروستد",
+            "description": "8 قطع فروج بروستد مقرمشة من برّا وطرية من جوّا.",
+            "ingredients": [
+                "8 قطع بروستد",
+                "ثوم",
+                "بطاطا",
+                "كول سلو",
+                "خبز"
+            ],
+            "price": 1200,
+            "image": "/assets/imgs/menu/broasted-chicken.webp",
+            "isBestSeller": false,
+            "isAvailable": true
+        },
+        {
+            "id": "small-pepsi",
+            "categoryId": "drinks",
+            "name": "بيبسي صغير",
+            "description": "علبة بيبسي باردة.",
+            "ingredients": [],
+            "price": 75,
+            "image": "/assets/imgs/menu/small-pepsi.webp",
+            "imageStyle": "photo",
+            "isBestSeller": false,
+            "isAvailable": true
+        }
+    ]
+}

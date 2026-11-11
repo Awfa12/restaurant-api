@@ -2,7 +2,7 @@
 
 > What this backend is, what's been decided, where it stands, and what's next. Keep it short and current; update it at the end of each feature.
 
-**Last updated:** 2026-11-11 · **Plan:** [BACKEND_PLAN.md](BACKEND_PLAN.md) (phases 0–12) · **Done:** Phase 0 foundation (PR #2) · **Done:** Phase 1 database (PR #3) · **Done:** Phase 3 auth (PR #4) · **Done:** Phase 4 menu: 4a uploads (PR #5), 4b categories (PR #6), 4c products (PR #7), 4d public `GET /menu` (PR #8; 165 tests passing) · **Contract amended** with Phases 1, 3 and 4 (frontend PR #39, merged) · **Next:** Phase 5 staging, Phase 2 seeders
+**Last updated:** 2026-11-11 · **Plan:** [BACKEND_PLAN.md](BACKEND_PLAN.md) (phases 0–12) · **Done:** Phase 0 foundation (PR #2) · **Done:** Phase 1 database (PR #3) · **Done:** Phase 3 auth (PR #4) · **Done:** Phase 4 menu: 4a uploads (PR #5), 4b categories (PR #6), 4c products (PR #7), 4d public `GET /menu` (PR #8) · **Contract amended** with Phases 1, 3 and 4 (frontend PR #39, merged) · **Done:** Phase 2 seed data (branch `feat/phase-2-seed`, 172 tests passing) · **Next:** Phase 5 staging
 
 ## 1. What this is
 
@@ -63,6 +63,7 @@ Full details in the contract; the short version:
 | Categories | ✅ Phase 4b: `/admin/categories` list, create, update (name, slug, photo), move, delete (`409` with products). Ordered lists use `App\Actions\OrderedList`; slugs `App\Support\Slugs` |
 | Products | ✅ Phase 4c: `/admin/products` list, create, `PUT` full save (sizes synced by id), `PATCH` quick change, delete; `/admin/best-sellers/{id}/move`. `App\Actions\SaveProduct`, `App\Actions\BestSellers` |
 | Public menu | ✅ Phase 4d: `GET /api/v1/menu` (no token), her `MenuSection[]`, 3 queries |
+| Seed data | ✅ Phase 2: `database/seeders/data/` (8 JSON files + 21 photos, exported from her mock files with `composer seed:export`; needs Node 22 locally, never on the server). `php artisan migrate:fresh --seed` locally; refuses on a database that has content |
 | Sessions / queue | `array` / `sync` (no `sessions` or queue tables; the daily jobs run from cron: token prune and uploads prune) |
 | Tests | Admin tests sign in with `actingAsAdmin()` (`tests/Pest.php`, a Sanctum token): Laravel's `actingAs()` uses the session guard, which Sanctum doesn't check here. `APP_DEBUG=false` in `phpunit.xml`, so errors have the production shape (`{ message }`, no trace) |
 | Git | PR #1 (docs), PR #2 (Phase 0), PR #3 (Phase 1), PR #4 (Phase 3), PR #5 (Phase 4a), PR #6 (Phase 4b), PR #7 (Phase 4c), PR #8 (Phase 4d) merged; remote `github.com/Awfa12/restaurant-api` |
@@ -72,9 +73,9 @@ Full details in the contract; the short version:
 The full sequence is in [BACKEND_PLAN.md](BACKEND_PLAN.md):
 
 1. ~~Phase 0 foundation~~ (PR #2) · ~~Phase 1 database~~ (PR #3) · ~~Phase 3 auth~~ (PR #4) · ~~Phase 4a uploads~~ (PR #5) · ~~Phase 4b categories~~ (PR #6) · ~~Phase 4c products~~ (PR #7) · ~~Phase 4d public menu~~ (PR #8): **Phase 4 done**. ~~Contract PR~~ (frontend PR #39, merged: §5.1).
-2. **Phase 5, staging on Hostinger**: auth + `/menu` work, so milestone M1 (the frontend switches login and the menu) only needs staging. Blocked on open question 3 (SSH, PHP 8.4, MySQL/MariaDB version, data centre). There: `php artisan admin:create`, `storage:link`, cron, and the shared `FRONTEND_API_KEY` (sent to the frontend privately).
-3. **Phase 2:** seeders from the frontend mock data with the same slugs (waiting for the frontend's JSON export, open question 1), the settings rows, and the seeded photos registered in `uploads`. No admin in the seeder. Needed before staging is useful to her (an empty menu otherwise).
-4. **Phase 6:** offers (reuses `OrderedList`, `Slugs`, `OwnUploadUrl`, the `PUT`/`PATCH` convention).
+2. ~~Phase 2 seed data~~ (branch `feat/phase-2-seed`): we export the mock data ourselves (`composer seed:export`); `migrate:fresh --seed` reproduces her content and slugs.
+3. **Phase 5, staging on Hostinger**: auth, `/menu` and the seed data are ready, so milestone M1 (the frontend switches login and the menu) only needs staging. Blocked on open question 3 (SSH, PHP 8.4, MySQL/MariaDB version, data centre). There: `php artisan migrate --force`, `db:seed --force` (once, empty database), `php artisan admin:create`, `storage:link`, cron, and the shared `FRONTEND_API_KEY` (sent to the frontend privately).
+4. **Phase 6:** offers (reuses `OrderedList`, `Slugs`, `OwnUploadUrl`, the `PUT`/`PATCH` convention). The seed data already has them.
 
 ### 5.1 Contract changes from Phases 1, 3 and 4: done
 
@@ -84,7 +85,7 @@ Found while checking her code (in that PR): her `ProductForm` gives new sizes a 
 
 ## 6. Open questions
 
-1. **Frontend:** when will the mock data be exported as JSON for the seeders?
+1. ~~**Frontend:** when will the mock data be exported as JSON for the seeders?~~ **Answered 2026-11-11: we export it ourselves** (`composer seed:export`, Phase 2). The one-line update to API-CONTRACT §9 goes in a frontend PR (the user opens it).
 2. **Both:** which domain? (decides `api.<domain>` and the QR codes)
 3. **Hostinger plan:** SSH access (needed for composer + artisan)? **PHP 8.4 available?** (required, see §4) Which EU data centre? **MySQL or MariaDB, which version?** (local is MySQL 9.2, CI is MySQL 8.0: avoid 9.x-only features until we know)
 4. **Laravel's built-in English messages:** `401` "Unauthenticated." (as the contract shows), `404` "Not Found", `429` "Too Many Attempts.". Kept as is: the frontend shows its own Arabic text per status. Translate them only if the frontend asks.

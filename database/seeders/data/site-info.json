@@ -1,0 +1,43 @@
+{
+    "tagline": "شاورما بطعم أصيل من قلب السويداء،\nبخبرة شيفنا وكرم أهل الجبل.",
+    "phones": [
+        {
+            "id": "phone-1",
+            "number": "+963930539614",
+            "hasWhatsApp": true
+        },
+        {
+            "id": "phone-2",
+            "number": "+963980785608",
+            "hasWhatsApp": true
+        },
+        {
+            "id": "phone-qanawat",
+            "number": "+963930539614",
+            "hasWhatsApp": true,
+            "branchId": "qanawat-road"
+        },
+        {
+            "id": "phone-mehwari",
+            "number": "+963980785608",
+            "hasWhatsApp": true,
+            "branchId": "al-mehwari"
+        }
+    ],
+    "branches": [
+        {
+            "id": "qanawat-road",
+            "name": "فرع طريق قنوات",
+            "address": "السويداء، طريق قنوات، مقابل مشفى المزرعة"
+        },
+        {
+            "id": "al-mehwari",
+            "name": "فرع المحوري",
+            "address": "السويداء، المحوري، مقابل كازية سرايا"
+        }
+    ],
+    "openingHours": "يومياً من 9 الصبح لـ 12 بالليل",
+    "openingHoursSchema": [
+        "Mo-Su 09:00-24:00"
+    ]
+}

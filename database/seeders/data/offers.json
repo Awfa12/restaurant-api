@@ -1,0 +1,55 @@
+{
+    "isEnabled": true,
+    "eyebrow": "عروض أهل الكرم",
+    "title": "الكرم **بالعروض**",
+    "menuCardImage": "/assets/imgs/categories/offers.webp",
+    "offers": [
+        {
+            "id": "chicken-cola",
+            "title": "عرض الفروج",
+            "items": [
+                "فروج مشوي",
+                "بطاطا",
+                "ثوم"
+            ],
+            "freeItem": "لتر ببسي",
+            "price": 1250,
+            "image": "/assets/imgs/offers/chicken-cola.webp",
+            "isActive": true
+        },
+        {
+            "id": "shawarma-4-plus-1",
+            "title": "عرض 4+1",
+            "items": [
+                "4 سندويشات شاورما جاج"
+            ],
+            "freeItem": "سندويشة شاورما خامسة",
+            "price": 1000,
+            "image": "/assets/imgs/offers/shawarma-4-plus-1.webp",
+            "badge": "الأكثر طلباً",
+            "isActive": true
+        },
+        {
+            "id": "crispy-duo",
+            "title": "ثنائي الكرسبي",
+            "items": [
+                "2 وجبة كرسبي"
+            ],
+            "freeItem": "سندويشة شاورما",
+            "price": 1100,
+            "image": "/assets/imgs/offers/crispy-duo.webp",
+            "isActive": true
+        },
+        {
+            "id": "shawarma-fries-duo",
+            "title": "ثنائي الشاورما",
+            "items": [
+                "2 سندويشة شاورما جاج"
+            ],
+            "freeItem": "سندويشة بطاطا",
+            "price": 500,
+            "image": "/assets/imgs/offers/shawarma-fries-duo.webp",
+            "isActive": true
+        }
+    ]
+}

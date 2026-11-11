@@ -1,0 +1,13 @@
+{
+    "frontendCommit": "49ad6a67f0e8f6891a266e2cfcd8a888e31700cb",
+    "mockFiles": [
+        "src/data/mock/menu.ts",
+        "src/data/mock/offers.ts",
+        "src/data/mock/menu-banners.ts",
+        "src/data/mock/reviews.ts",
+        "src/data/mock/hero.ts",
+        "src/data/mock/about.ts",
+        "src/data/mock/site-info.ts",
+        "src/data/mock/ordering.ts"
+    ]
+}
