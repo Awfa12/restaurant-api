@@ -19,12 +19,14 @@ class Category extends Model
 
     /**
      * Products are listed in creation order (there is no move for products).
+     * chaperone(): each loaded product gets this category as its `category`
+     * without another query (the menu sends `categoryId`).
      *
      * @return HasMany<Product, $this>
      */
     public function products(): HasMany
     {
-        return $this->hasMany(Product::class)->orderBy('id');
+        return $this->hasMany(Product::class)->orderBy('id')->chaperone('category');
     }
 
     /**
