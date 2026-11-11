@@ -54,17 +54,13 @@ Make the empty project an API project. Branch `chore/phase-0-foundation`.
 
 **Done when:** `GET /api/v1/…` routes exist, validation errors come back as Arabic JSON, and tests pass.
 
-### Phase 1 — Database design `TODO` · size M
-Design first (discussion → approval), then code.
-- `docs/DATABASE.md`: tables, columns, types, constraints, indexes, and a diagram (Mermaid).
-- **Decisions to make (1.x):**
-  - Which singletons get their own table and which share a `settings` table with a JSON column (hero, about, section texts, ordering messages).
-  - Slugs: column per table + unique index, and how product and offer slugs stay unique **across both tables** (a validation rule checking both, or a shared `slugs` table).
-  - `order` columns (unique per list?) and `best_seller_order`.
-  - Foreign keys and what happens on delete (category → products: refused; branch → phones and dine-in settings: deleted).
-  - Image columns: URL string vs a `uploads` table (needed for the 24 h cleanup of unused uploads).
-  - Ids: auto-increment internally; slug as the public id where the contract says so.
-- Then migrations, models (casts, relations), factories.
+### Phase 1 — Database design `DONE` · size M
+Branch `feat/phase-1-database`.
+- ✅ [DATABASE.md](DATABASE.md) approved 2026-11-11 (decisions 1.1–1.8, §6), checked against every dashboard repository method (DATABASE.md §5).
+- ✅ Migrations: 11 new tables; Laravel's `users` reworked (username, no email), `password_reset_tokens`, `sessions` and the queue tables removed (edited in place: nothing deployed). Sessions default to `array`, the queue to `sync` (config and `.env.example`).
+- ✅ Models with `#[Fillable]`, casts (JSON lists, `ImageStyle` / `BannerTargetKind` enums in `app/Enums`), relations; `User` has `HasApiTokens`.
+- ✅ Factories with states (best seller, banner targets, branch phones, delivery). `DatabaseSeeder` emptied: the default test user with password `password` must never reach staging or production; Phase 2 writes the real seeder.
+- ✅ Tests: `tests/Feature/Database/SchemaRulesTest.php` (delete rules, unique slugs, casts). `migrate:fresh` runs on MySQL.
 
 **Done when:** `DATABASE.md` is approved, and `php artisan migrate:fresh` runs on MySQL.
 
@@ -188,7 +184,7 @@ The limits (`PRODUCT_LIMITS`, `OFFER_LIMITS`, …) are constants in that file; c
 | 0.1 | Local + test database | 0 | **Decided 2026-11-11: MySQL for both** (matches Hostinger) · ~~SQLite (simpler)~~ |
 | 0.2 | Arabic validation texts | 0 | **Decided 2026-11-11: write `lang/ar` ourselves** for the rules we use (no dependency) · ~~`laravel-lang`~~ |
 | 0.3 | Remove Vite/Tailwind/welcome page | 0 | **Decided 2026-11-11: remove** · ~~keep~~ |
-| 1.x | Schema choices | 1 | See Phase 1 |
+| 1.1–1.8 | Schema choices | 1 | **Decided 2026-11-11, all as recommended:** hybrid singletons (JSON `settings` + `ordering_settings` row + dine-in on `branches`) · auto-increment id + unique slug, product/offer slugs checked across both tables by a rule · `position` columns, no unique index · `sizes_label` + `product_sizes` · banner targets as FKs, null on delete · images stored as paths + `uploads` table · restrict/cascade/null-on-delete as in DATABASE.md §4 · default Laravel tables trimmed. Details: [DATABASE.md](DATABASE.md) |
 | 2.1 | Creating the admin account | 2 | Seeder from env vars · `php artisan admin:create` command |
 | 4.1 | Slug generation from Arabic | 4b | `Str::slug` (test on real names) · owner always types it |
 | 7.1 | Banner `href` in the public response | 7 | Backend resolves the link · frontend builds it from the target |

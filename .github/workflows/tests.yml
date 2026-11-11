@@ -51,6 +51,11 @@ jobs:
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
 
+      # Fails the build when an installed package has a known security advisory.
+      # Abandoned packages are only reported (not a vulnerability by themselves).
+      - name: Check dependencies for security advisories
+        run: composer audit --abandoned=report
+
       - name: Prepare the environment
         run: |
           cp .env.example .env

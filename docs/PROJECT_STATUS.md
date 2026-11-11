@@ -2,7 +2,7 @@
 
 > What this backend is, what's been decided, where it stands, and what's next. Keep it short and current; update it at the end of each feature.
 
-**Last updated:** 2026-11-11 · **Plan:** [BACKEND_PLAN.md](BACKEND_PLAN.md) (phases 0–12) · **Done:** Phase 0 foundation (branch `chore/phase-0-foundation`, 7 tests passing on MySQL) · **Next:** Phase 1 database design (discussion first, no code until approved)
+**Last updated:** 2026-11-11 · **Plan:** [BACKEND_PLAN.md](BACKEND_PLAN.md) (phases 0–12) · **Done:** Phase 0 foundation (PR #2) · **Done:** Phase 1 database (branch `feat/phase-1-database`, 18 tests passing) · **Next:** Phase 2 seed data or Phase 3 auth
 
 ## 1. What this is
 
@@ -56,21 +56,18 @@ Full details in the contract; the short version:
 | Locale | **`ar`** (default in `config/app.php` and `.env.example`). Fallback messages in `lang/ar/validation.php` (only the rules we use, no `:attribute`) and `lang/ar.json` (the "and N more errors" suffix), decision 0.2 |
 | Web leftovers | Removed (decision 0.3): welcome page, `routes/web.php`, Vite/Tailwind/npm files. `composer dev` runs `php artisan serve` only (no Node, no queue worker) |
 | CI | `.github/workflows/tests.yml`: Pint + Pest on PHP 8.4 against MySQL 8.0, on every PR and push to `main` |
-| Git | PR #1 (docs) merged; remote `github.com/Awfa12/restaurant-api` |
+| Schema | ✅ Phase 1: [DATABASE.md](DATABASE.md) implemented (11 tables + `users`, `personal_access_tokens`, `cache`). Models in `app/Models`, enums in `app/Enums`, factories with states. No seed data yet (`DatabaseSeeder` is empty on purpose) |
+| Sessions / queue | `array` / `sync` (no `sessions` or queue tables; the daily job runs from cron) |
+| Git | PR #1 (docs) and PR #2 (Phase 0) merged; remote `github.com/Awfa12/restaurant-api` |
 
 ## 5. Next steps
 
-The full sequence is in [BACKEND_PLAN.md](BACKEND_PLAN.md); the first steps:
+The full sequence is in [BACKEND_PLAN.md](BACKEND_PLAN.md):
 
-1. **Database schema design** (discussion, then approval):
-   - Which entities get real tables (referenced by id: categories, products, option groups/options, offers, banners, reviews, branches, phones, dine-in settings) and which can be a JSON settings table (always saved whole: hero, about, offers/reviews section texts, ordering messages).
-   - Slugs: columns, uniqueness across products + offers.
-   - `order` columns and the move action; best-seller order.
-   - Where each cross-record rule lives (BACKEND_REQUIREMENTS §4).
-2. ~~`php artisan install:api`; local database; `APP_LOCALE=ar`~~: Phase 0, done.
-3. Seeders from the frontend mock data with the same ids (waiting for the frontend's JSON export).
-4. First slice: auth (login / logout / me, rate limit) + its Pest tests.
-5. Staging on Hostinger as soon as auth + `/menu` work.
+1. ~~Phase 0 foundation~~ (PR #2) · ~~Phase 1 database~~ (branch `feat/phase-1-database`).
+2. **Phase 2:** seeders from the frontend mock data with the same slugs (waiting for the frontend's JSON export, open question 1), the settings rows, and the admin account from env vars.
+3. **Phase 3:** auth (login / logout / me, rate limit) + its Pest tests. Doesn't need the seed data: it can go before Phase 2.
+4. Staging on Hostinger as soon as auth + `/menu` work.
 
 ## 6. Open questions
 
@@ -83,5 +80,7 @@ The full sequence is in [BACKEND_PLAN.md](BACKEND_PLAN.md); the first steps:
 
 ## 7. Reference
 
+- [GOOD_PRACTICES.md](GOOD_PRACTICES.md): the good practices adopted, declined and still to do (updated with every change that adds one).
+- [DATABASE.md](DATABASE.md): tables, keys, delete rules, dashboard coverage.
 - [LARAVEL_API_RECAP.md](LARAVEL_API_RECAP.md): Sanctum tokens, API Resources, FormRequests, where logic goes, Hostinger shared-hosting notes.
 - Earlier discussion notes (outside both repos, historical): `../backend-notes/` (the backend's response to the draft contract, in English and Arabic, and the PR #38 description).
