@@ -28,6 +28,12 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    // The Next.js server vouches for the browser IP on login with this shared
+    // secret (X-Frontend-Key + X-Client-IP). Empty = the header is never trusted.
+    'frontend' => [
+        'key' => env('FRONTEND_API_KEY'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

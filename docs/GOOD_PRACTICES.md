@@ -14,6 +14,15 @@
 | **No hard-coded seed user** (the default `DatabaseSeeder` created one with password `password`) | `db:seed` runs on staging and production: that would be a guessable admin on a public API | `database/seeders/DatabaseSeeder.php`; the admin comes from env vars (Phase 2) | 2026-11-11 |
 | `composer audit` in CI | A dependency with a known vulnerability fails the build before it reaches the server | `.github/workflows/tests.yml` | 2026-11-11 |
 | Frontend repo is read-only from this repo's Claude sessions (edits and `.env*` reads denied) | We never change the other side's code; its secrets stay unread | `.claude/settings.json` | 2026-11-11 |
+| One generic message for a wrong username or a wrong password | Doesn't tell an attacker which usernames exist | `LoginRequest::WRONG_CREDENTIALS` | 2026-11-11 |
+| A failed login always takes ≥ 400 ms (`Timebox`), the success returns at once | The response time can't reveal whether the username exists | `LoginRequest::authenticate()`; test with `Sleep::fake()` | 2026-11-11 |
+| Rate limit on **failed** logins only, per username + client IP, cleared on success | Slows guessing without locking out an owner who logs in on several devices | `LoginRequest` | 2026-11-11 |
+| The client IP is trusted from a header only with a shared secret (`X-Frontend-Key`, `hash_equals`) and only if it's a valid IP | The API is public: a plain `X-Client-IP` / `X-Forwarded-For` could be faked by anyone to dodge the limit. Server-to-server, all dashboard traffic would otherwise share Vercel's IP | `LoginRequest::clientIp()`, `config/services.php` | 2026-11-11 |
+| Admin created by `php artisan admin:create` with a hidden prompt, ≥ 12 characters, confirmed; never a CLI option or a seeder | No plain-text password in `.env` or the shell history; the command is also the password reset | `app/Console/Commands/CreateAdminCommand.php` | 2026-11-11 |
+| A new password deletes every token of that user | If the password changed because it leaked, every device the attacker used is logged out | `CreateAdminCommand` | 2026-11-11 |
+| Tokens expire (7 days) and are pruned daily; Bearer only (`sanctum.guard = []`) | A stolen token stops working; the token table doesn't grow; no session guard is consulted | `config/sanctum.php`, `routes/console.php` | 2026-11-11 |
+| Logout deletes only the current device's token | Logging out the laptop doesn't log out the owner's phone | `AuthController::logout()` | 2026-11-11 |
+| Throttle keys are hashed | Usernames aren't stored in plain text in the cache table | `LoginRequest::throttleKey()` | 2026-11-11 |
 
 ### Data integrity
 
@@ -69,6 +78,7 @@
 | Separate MySQL users for staging and production, never `root`, each limited to its own database | A leaked staging `.env` can't touch production | Phase 5 / 12 |
 | `APP_DEBUG=false` and `LOG_CHANNEL=daily` with a retention limit on servers | Debug pages leak config; logs fill a shared-hosting disk | Phase 5 / 12 |
 | Daily database backups (check Hostinger's, add a dump if not daily) | The menu and settings exist only in this database | Phase 12 |
+| Rotate `FRONTEND_API_KEY` if it ever leaks (new value in both env vars) | A leaked key only lets someone fake the IP used for the login limit, but it should still be replaced | Whoever notices; procedure in `docs/DEPLOY.md` (Phase 5) |
 | Shell (`Bash`) deny rules, or the sandbox, for the frontend repo | Only the Read/Edit tools are blocked today; a shell command could still read its `.env` or commit there | Proposed, waiting for a decision (PROJECT_STATUS open question 5) |
 
 ## Considered and not adopted
@@ -77,3 +87,6 @@
 |---|---|
 | `laravel-lang` package for Arabic validation texts | A dependency for texts we mostly override per field (decision 0.2) |
 | Unique indexes on `position` columns | A move would need a temporary-value swap; the actions keep 1…n in a transaction and tests check it (decision 1.3) |
+| Admin account from `ADMIN_USERNAME` / `ADMIN_PASSWORD` env vars in a seeder | Leaves the password in plain text in the server's `.env` (decision 2.1 → `admin:create`) |
+| Trusting `X-Forwarded-For` (or Vercel as a trusted proxy) for the login IP | Vercel's outgoing IPs aren't fixed, and a public API can't tell a real proxy from an attacker (decision 3.3 → shared-secret header) |
+| `throttle` middleware for the login limit | Counts successful logins too: the owner could lock themselves out with a few devices (decision 3.2) |
