@@ -1,0 +1,20 @@
+{
+    "badge": "من قلب السويداء",
+    "headline": "شاورما بطعم أصيل",
+    "primaryActionLabel": "اطلب الآن",
+    "secondaryActionLabel": "من نحن",
+    "features": [
+        {
+            "label": "مكونات طازجة يوميًا",
+            "icon": "fresh"
+        },
+        {
+            "label": "على الطريقة الشرقية الأصيلة",
+            "icon": "fire"
+        },
+        {
+            "label": "جودة عالية وسر المذاق",
+            "icon": "quality"
+        }
+    ]
+}

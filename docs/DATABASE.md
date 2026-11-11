@@ -261,6 +261,8 @@ The singleton rows (`settings` × 5, `ordering_settings` × 1) are created by th
 
 Daily job (`php artisan uploads:prune`): delete every upload older than 24 h whose path no image field uses (`categories`, `products`, `offers`, `banners`, and the `about` and `offers_section` settings). Replaced photos are caught by the same check. The list of image fields lives in `App\Support\ImageReferences`: **a new image field must be added there**, or its photos would be deleted after a day.
 
+Seeded photos (Phase 2) are uploads too: `uploads/seed-<16 hex of the content's sha1>.webp`, one row per distinct file, so a photo used by an offer and a banner is stored once.
+
 ### Laravel's own tables (decision 1.8)
 
 - **`users`**: `name`, `username` (unique), `password`. No email columns (login is `{ username, password }`).

@@ -64,13 +64,17 @@ PR #3 (branch `feat/phase-1-database`).
 
 **Done when:** `DATABASE.md` is approved, and `php artisan migrate:fresh` runs on MySQL.
 
-### Phase 2 — Seed data `TODO` · size S (blocked on the frontend's JSON export)
-- Seeders from the frontend mock data **with the same ids** (`src/data/mock/`): about 15 categories + products, 4 offers, 3 banners, 4 reviews, 2 branches, and the singletons.
-- Photos from `../restaurant-template/public/assets/` → `storage/app/public/…`; records store the new URLs.
-- **Contract test (strong check):** the frontend exports what its services return today (e.g. `getMenu()` → `menu.json`). After seeding, `GET /api/v1/menu` must return **the same JSON**. One fixture per public endpoint, added in each area's phase.
-- **No admin user in the seeder** (decision 2.1, decided in Phase 3): the admin is created on each server with `php artisan admin:create`.
+### Phase 2 — Seed data `DONE` · size S
+Branch `feat/phase-2-seed`. **We export the mock data ourselves** (the frontend won't): open question 1 answered.
+- ✅ **Export** (dev-only, plain Node, no npm: decision 0.3 stays): `composer seed:export` = `node --experimental-strip-types database/seeders/data/export.mjs [../restaurant-template]`. Imports `src/data/mock/*.ts` read-only and writes 8 JSON files (her exact shapes) + the 21 photos they use (`database/seeders/data/images/`, 1.8 MB) + `source.json` (the frontend commit). Deterministic (a re-run with no mock change gives no diff). **Refuses** before writing when a mock file imports anything but types, an export is missing, a photo is missing, or a branch staff phone isn't one of the restaurant's public numbers (real staff numbers are never committed). Re-run after mock changes, review the diff, commit.
+- ✅ **Seeders** (`DatabaseSeeder` → `MenuSeeder`, `OffersSeeder`, `BannersSeeder`, `ReviewsSeeder`, `HomeContentSeeder`, `RestaurantSeeder`, one transaction): slugs kept (categories, products, offers, branches: `qanawat-road`, `al-mehwari`); sizes, phones, banners, reviews get database ids; `delivery.phoneId`, `phone.branchId`, `dineIn.branchId` and the banner targets remapped. The mock's shared size group becomes 3 rows per product. Best sellers (no order in the mock) numbered 1…4 in her `sortBestSellers` order. The 5 settings rows + the ordering row.
+- ✅ **Photos** (`Support\SeedImages`): copied to the public disk as `uploads/seed-<content hash>.webp` and registered in `uploads` (one upload per file, even when an offer and a banner share it), so `OwnUploadUrl` accepts them and `uploads:prune` keeps them. Deleted again if the seeding fails.
+- ✅ **Refuses on a database with content** (any row in a content table), before writing anything: it can never mix with or overwrite the owner's edits. Local `migrate:fresh --seed` works; production: `db:seed --force` once, on the empty database (Phase 5).
+- ✅ **No admin user in the seeder** (decision 2.1): `php artisan admin:create` on each server.
+- ✅ Tests (`tests/Feature/Database/SeedDataTest.php`): `GET /menu` matches the JSON the way her `getMenu()` builds it (slugs, names, prices, sizes, order, best sellers); every remapped reference; settings rows; photos on disk, in `uploads`, accepted by `OwnUploadUrl`, kept by `uploads:prune`; a second run and a single non-empty table both refuse. Checked by breaking the guard, the delivery remap, the best-seller numbering and the upload registration once each.
+- Private data check: the JSON has only the restaurant's two public numbers (each repeated by the placeholder staff phones), first names in reviews (her "realistic placeholders"), and no photo carries EXIF/XMP metadata.
 
-**Done when:** `migrate:fresh --seed` reproduces the mock content and ids.
+**Done when:** `migrate:fresh --seed` reproduces the mock content and slugs. ✅
 
 ### Phase 3 — Auth `DONE` · size S
 PR #4 (branch `feat/phase-3-auth`). Decisions 3.1–3.4 (2026-11-11), all as recommended, 3.3 with Option A.

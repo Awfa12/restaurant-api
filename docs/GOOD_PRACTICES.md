@@ -19,6 +19,8 @@
 | Rate limit on **failed** logins only, per username + client IP, cleared on success | Slows guessing without locking out an owner who logs in on several devices | `LoginRequest` | 2026-11-11 |
 | The client IP is trusted from a header only with a shared secret (`X-Frontend-Key`, `hash_equals`) and only if it's a valid IP | The API is public: a plain `X-Client-IP` / `X-Forwarded-For` could be faked by anyone to dodge the limit. Server-to-server, all dashboard traffic would otherwise share Vercel's IP | `LoginRequest::clientIp()`, `config/services.php` | 2026-11-11 |
 | Admin created by `php artisan admin:create` with a hidden prompt, ≥ 12 characters, confirmed; never a CLI option or a seeder | No plain-text password in `.env` or the shell history; the command is also the password reset | `app/Console/Commands/CreateAdminCommand.php` | 2026-11-11 |
+| The seed export refuses a branch staff number that isn't one of the restaurant's public numbers | Real staff numbers are private (never shown on the site): if one ever reaches the mock data, it can't end up committed in this repo | `database/seeders/data/export.mjs` | 2026-11-11 |
+| The seed export refuses a mock file that imports anything but types (checked on the text, before running it) | Exporting must never execute frontend code; the mock files stay plain data | `export.mjs` | 2026-11-11 |
 | A new password deletes every token of that user | If the password changed because it leaked, every device the attacker used is logged out | `CreateAdminCommand` | 2026-11-11 |
 | Tokens expire (7 days) and are pruned daily; Bearer only (`sanctum.guard = []`) | A stolen token stops working; the token table doesn't grow; no session guard is consulted | `config/sanctum.php`, `routes/console.php` | 2026-11-11 |
 | Logout deletes only the current device's token | Logging out the laptop doesn't log out the owner's phone | `AuthController::logout()` | 2026-11-11 |
@@ -37,6 +39,9 @@
 | Lists inside a record saved by id, never deleted and recreated | Carts, ordering settings and printed QR codes point at those ids | sync actions (Phases 4, 10) | 2026-11-11 |
 | Images stored as paths, the URL built by the Resource | A host or domain change (staging → production) breaks no stored data | [DATABASE.md](DATABASE.md) §1 | 2026-11-11 |
 | Multi-row changes (moves, syncs, site-info save) in one `DB::transaction()` | Never half saved | actions (Phases 4–11) | 2026-11-11 |
+| **The seeder refuses a database that already has content** (any row in a content table), before writing anything | `db:seed` on staging or production can never mix with or overwrite the owner's edits; locally `migrate:fresh --seed` still works | `DatabaseSeeder::ensureDatabaseIsEmpty()`; `SeedDataTest` | 2026-11-11 |
+| Seeding runs in one transaction; the photos it copied are deleted if it fails | A failed seed leaves nothing half done, on the disk either | `DatabaseSeeder`, `SeedImages::deleteWritten()` | 2026-11-11 |
+| Seeded photos are registered as uploads | `OwnUploadUrl` accepts them when the owner re-saves a record, and `uploads:prune` keeps them | `SeedImages` | 2026-11-11 |
 
 ### Safety switches
 
@@ -78,6 +83,8 @@
 | Branch per phase + PR; never push to `main` directly | Every change is reviewed and goes through CI | CLAUDE.md | 2026-11-11 |
 | Discuss before coding; options and trade-offs for anything hard to reverse | Schema, dependencies and the contract are expensive to undo | CLAUDE.md | 2026-11-11 |
 | Default migrations edited in place only while nothing is deployed | After the first deploy, every change is a new migration (deployed migrations are immutable) | migrations | 2026-11-11 |
+| **Seed data is committed** (JSON + the photos it uses + the frontend commit it came from), re-exported by a script, reviewed as a diff | The server never needs the frontend repo or Node; every change to the starting content is visible in a PR; the export is deterministic, so an unchanged mock gives no diff | `database/seeders/data/`, `composer seed:export` | 2026-11-11 |
+| Seed tests read their expected values from the same JSON, the way the frontend builds them | The test follows a re-export (no copy of the data to keep in sync), and still checks the seeder independently (order, remapping, best-seller numbering) | `SeedDataTest` | 2026-11-11 |
 | Project rules in `CLAUDE.md` never contain Boost's opening tag | `boost:update` treats its first occurrence as the start of its block and wipes everything after it | CLAUDE.md note | 2026-11-11 |
 
 ## To do (agreed, not done yet)

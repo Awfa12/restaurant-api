@@ -87,11 +87,15 @@ it('returns 422 with an Arabic message for a file that is not an allowed image',
     ],
 ]);
 
-it('returns 422 when no image is sent', function () {
+it('returns 422 asking for a photo when no file is sent', function (array $body) {
     actingAsAdmin();
 
-    $response = $this->postJson('/api/v1/admin/uploads', []);
+    $response = $this->post('/api/v1/admin/uploads', $body);
 
     $response->assertUnprocessable()
         ->assertJsonPath('errors.image', ['اختار صورة']);
-});
+    $this->assertDatabaseCount('uploads', 0);
+})->with([
+    'nothing' => [[]],
+    'text instead of a file' => [['image' => 'database/seeders/data/images/imgs/menu/fries.webp']],
+]);

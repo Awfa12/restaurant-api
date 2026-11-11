@@ -55,7 +55,8 @@ class StoreUploadRequest extends FormRequest
     {
         return [
             'image.required' => 'اختار صورة',
-            'image.file' => 'ما قدرنا نرفع الصورة، جرّب مرة تانية',
+            // Text instead of a file (e.g. Postman's "Text" field type): trying again wouldn't help.
+            'image.file' => 'اختار صورة',
             'image.uploaded' => 'ما قدرنا نرفع الصورة، جرّب مرة تانية',
             'image.mimes' => 'الصورة لازم تكون WebP أو PNG أو JPG',
             'image.max' => 'الصورة كبيرة كتير (أكتر من 5MB)، اختار صورة أصغر',

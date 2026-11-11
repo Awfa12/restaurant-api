@@ -1,0 +1,27 @@
+{
+    "delivery": {
+        "isEnabled": true,
+        "fee": 150,
+        "phoneId": "phone-1"
+    },
+    "dineIn": {
+        "isEnabled": true,
+        "branches": [
+            {
+                "branchId": "qanawat-road",
+                "isEnabled": true,
+                "tableCount": 10
+            },
+            {
+                "branchId": "al-mehwari",
+                "isEnabled": true,
+                "tableCount": 10
+            }
+        ]
+    },
+    "message": {
+        "greeting": "مرحبا {restaurant}، بدي اطلب:",
+        "closing": "شكراً إلكن، ورح شاركن رأيي بالتجربة بعد ما يوصل الطلب."
+    },
+    "thankYou": "شكراً {name}! طلبك صار جاهز عالواتساب، بس تأكد إنك كبست إرسال. وبعد ما تجرّب، شاركنا رأيك بالتجربة، رأيك بيهمنا."
+}
