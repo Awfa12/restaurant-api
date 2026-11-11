@@ -1,3 +1,40 @@
+# CLAUDE.md — restaurant-api
+
+Laravel 13 REST API (API only, no web pages) for the Ahl Al Karam (أهل الكرم) restaurant website. The frontend is a separate Next.js repo, at `../restaurant-template` on this machine.
+
+> Keep project rules **above** the `<laravel-boost-guidelines>` block: Boost regenerates that block when it updates.
+
+## Start here
+
+1. **[docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md):** what this is, the decisions, the current state, and what's next. Read it at the start of every session.
+2. **[docs/BACKEND_PLAN.md](docs/BACKEND_PLAN.md):** the phases (0–12), what each delivers, the validation to port, and the open decisions. Work one phase at a time and update its status.
+3. **The agreed API contract:** `../restaurant-template/.local-docs/API-CONTRACT.md`, the **source of truth** for endpoints, JSON shapes, limits and errors, with `BACKEND_REQUIREMENTS.md` next to it. Read the section relevant to the task. If code and contract disagree, the contract wins: point out the conflict and don't change behaviour silently.
+4. [docs/LARAVEL_API_RECAP.md](docs/LARAVEL_API_RECAP.md): how Sanctum, Resources and FormRequests fit this project, and the Hostinger notes.
+
+## The frontend repo is read-only
+
+- Read `../restaurant-template` freely for the contract, `src/types/` (JSON shapes), `src/data/mock/` (seed data) and `src/lib/dashboard/validation.ts` (rules and Arabic messages). `.claude/settings.json` blocks edits there and blocks reading its `.env` files.
+- **Never edit, commit or push in the frontend repo from here.** A contract change is proposed to the user. He opens the PR on `API-CONTRACT.md` himself (the Claude GitHub integration has no write access there), and the frontend reviews it.
+
+## Rules that are easy to get wrong
+
+- **Server to server only:** only the Next.js server calls this API, so there's no CORS, no CSRF and no Sanctum SPA cookies. Auth is Sanctum Bearer tokens valid 7 days, for one admin user.
+- **JSON:** camelCase keys exactly as in the frontend types, responses **not wrapped** in `data`, empty optional fields **left out**, ids always **strings**. Slugs are the public `id` of categories, products, offers and branches.
+- **Lists inside a record are saved by id, never deleted and recreated:** sizes, phones, branches. Cart lines, ordering settings and printed QR codes point at those ids.
+- **Validation messages are always Arabic** (ported from the frontend's `validation.ts`). A cross-record rule that refuses a change returns `409` with an Arabic message.
+- **No orders, payments, customer accounts or multi-tenancy.** Orders go to WhatsApp and are never stored.
+- **Shared hosting (Hostinger):** no Redis, no queue workers. Use the database/file drivers for cache and rate limiting, and cron for the one daily job.
+
+## Working with the user
+
+- He is the backend developer, experienced with full-stack Laravel (Blade, Tailwind, Alpine). This is his first API-only backend for a React/Next.js frontend. Explain the API and Next.js-side reasoning (server-to-server calls, caching, what the frontend expects); skip Laravel basics he already knows.
+- **Discuss before coding:** before any code change, briefly explain what you'll do, why, and which files change, then **wait for his approval**. Present options and trade-offs for anything hard to reverse: the schema, a new dependency, a contract change.
+- Don't expand scope or start the next step without approval.
+- After a feature: list the files changed and what to test, run the tests and Pint, and update `docs/PROJECT_STATUS.md`.
+- **Git:** never commit, push or merge unless he asks. Work on branches with PRs, and don't push to `main` directly.
+- **Secrets:** never put credentials, tokens, private phone numbers or `.env` values in code, docs or commits.
+- Communicate in English unless he asks otherwise. Docs and code are in English; user-facing messages are in Arabic.
+
 <laravel-boost-guidelines>
 === foundation rules ===
 
