@@ -2,7 +2,7 @@
 
 > What this backend is, what's been decided, where it stands, and what's next. Keep it short and current; update it at the end of each feature.
 
-**Last updated:** 2026-11-11 · **Plan:** [BACKEND_PLAN.md](BACKEND_PLAN.md) (phases 0–12) · **Done:** Phase 0 foundation (PR #2) · **Done:** Phase 1 database (PR #3) · **Done:** Phase 3 auth (PR #4) · **Now:** Phase 4 menu: 4a uploads done (branch `feat/phase-4a-uploads`, 75 tests passing), next 4b categories
+**Last updated:** 2026-11-11 · **Plan:** [BACKEND_PLAN.md](BACKEND_PLAN.md) (phases 0–12) · **Done:** Phase 0 foundation (PR #2) · **Done:** Phase 1 database (PR #3) · **Done:** Phase 3 auth (PR #4) · **Now:** Phase 4 menu: 4a uploads (PR #5), 4b categories done (branch `feat/phase-4b-categories`, 112 tests passing), next 4c products
 
 ## 1. What this is
 
@@ -59,17 +59,18 @@ Full details in the contract; the short version:
 | Schema | ✅ Phase 1: [DATABASE.md](DATABASE.md) implemented (11 tables + `users`, `personal_access_tokens`, `cache`). Models in `app/Models`, enums in `app/Enums`, factories with states. No seed data yet (`DatabaseSeeder` is empty on purpose) |
 | Auth | ✅ Phase 3: `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`. Admin created with `php artisan admin:create <username>` (also the password reset). Failed logins limited per username + client IP; the client IP comes from the frontend's `X-Client-IP` only with the right `X-Frontend-Key` (`FRONTEND_API_KEY`) |
 | Uploads | ✅ Phase 4a: `POST /admin/uploads` on the `public` disk (`storage/app/public/uploads`, served at `/storage/…`: run `php artisan storage:link` once per machine/server). Image fields accept only our upload URLs (`OwnUploadUrl`). Daily `uploads:prune` |
+| Categories | ✅ Phase 4b: `/admin/categories` list, create, update (name, slug, photo), move, delete (`409` with products). Ordered lists use `App\Actions\OrderedList`; slugs `App\Support\Slugs` |
 | Sessions / queue | `array` / `sync` (no `sessions` or queue tables; the daily jobs run from cron: token prune and uploads prune) |
-| Tests | Admin tests sign in with `actingAsAdmin()` (`tests/Pest.php`, a Sanctum token): Laravel's `actingAs()` uses the session guard, which Sanctum doesn't check here |
-| Git | PR #1 (docs), PR #2 (Phase 0), PR #3 (Phase 1), PR #4 (Phase 3) merged; remote `github.com/Awfa12/restaurant-api` |
+| Tests | Admin tests sign in with `actingAsAdmin()` (`tests/Pest.php`, a Sanctum token): Laravel's `actingAs()` uses the session guard, which Sanctum doesn't check here. `APP_DEBUG=false` in `phpunit.xml`, so errors have the production shape (`{ message }`, no trace) |
+| Git | PR #1 (docs), PR #2 (Phase 0), PR #3 (Phase 1), PR #4 (Phase 3), PR #5 (Phase 4a) merged; remote `github.com/Awfa12/restaurant-api` |
 
 ## 5. Next steps
 
 The full sequence is in [BACKEND_PLAN.md](BACKEND_PLAN.md):
 
-1. ~~Phase 0 foundation~~ (PR #2) · ~~Phase 1 database~~ (PR #3) · ~~Phase 3 auth~~ (PR #4) · ~~Phase 4a uploads~~ (branch `feat/phase-4a-uploads`).
+1. ~~Phase 0 foundation~~ (PR #2) · ~~Phase 1 database~~ (PR #3) · ~~Phase 3 auth~~ (PR #4) · ~~Phase 4a uploads~~ (PR #5) · ~~Phase 4b categories~~ (branch `feat/phase-4b-categories`).
 2. **Contract PR** (the user opens it on `API-CONTRACT.md`): the items in §5.1. Best before her apiRepository work, since 4.1 and 4.2 change how she calls the menu endpoints.
-3. **Phase 4b** categories → **4c** products → **4d** public `GET /menu`.
+3. **Phase 4c** products → **4d** public `GET /menu`.
 4. **Phase 2:** seeders from the frontend mock data with the same slugs (waiting for the frontend's JSON export, open question 1), the settings rows, and the seeded photos registered in `uploads`. No admin in the seeder.
 5. Staging on Hostinger as soon as auth + `/menu` work; there, `php artisan admin:create` and the shared `FRONTEND_API_KEY` (sent to the frontend privately).
 
@@ -85,6 +86,7 @@ From Phase 4 (menu, decisions 4.1–4.4):
 - **Slugs (replaces "suggested from the Arabic name"):** create/update bodies of categories, products, offers and branches take an optional `slug` (lowercase Latin kebab-case, ≤ 80, unique; products and offers checked against each other). Empty → a neutral id (`item-3f9a1c2b`, `cat-…`). Automatic transliteration was tested and rejected (`فروج` → `frog`).
 - **`PUT /admin/products/{id}` = full save** (a missing optional field such as `image`, `imageStyle` or `optionGroups` is cleared); **`PATCH` = quick change** (`price`, `isAvailable`, `isBestSeller`, `bestSellerOrder` only). Her `saveProduct` calls `PUT`, `updateProduct` calls `PATCH`. Same convention later for offers, banners and reviews.
 - Creates answer `201`; `POST /admin/uploads` answers `201 { url, width, height }`.
+- Categories: `PATCH /admin/categories/{id}` takes `name?`, `slug?`, `image?` (one endpoint for her `renameCategory` and `setCategoryImage`); an empty `slug` keeps the current one. Category names are unique after trimming and collapsing spaces (`422`: `في قسم بنفس الاسم`).
 - Image fields accept only URLs returned by `POST /admin/uploads` (`422`: `الصورة مش من الصور المرفوعة، ارفعها من جديد`).
 - A size id that belongs to another product → `422` on `optionGroups.0.options.<i>.id`.
 
