@@ -39,16 +39,18 @@ All under `/api/v1`. Every admin endpoint is behind `auth:sanctum`.
 
 Each phase ends with Pest tests passing, Pint clean, `docs/PROJECT_STATUS.md` updated, and, for an area the frontend uses, a note to the frontend that it's ready on staging. One branch + PR per phase (or per sub-step for the big ones).
 
-### Phase 0 — Foundation `TODO` · size S
-Make the empty project an API project.
-- `php artisan install:api` (Sanctum, `routes/api.php`, the tokens migration); routes grouped under `v1`.
-- **Local database:** MySQL to match Hostinger (decision 0.1). SQLite is faster to start but behaves differently for JSON columns, foreign keys and some indexes.
-- `APP_LOCALE=ar`, `APP_FALLBACK_LOCALE=ar`; `lang/ar/validation.php` for the rules we use (decision 0.2).
-- Errors always JSON for `api/*` (`shouldRenderJsonWhen` in `bootstrap/app.php`), so a request missing `Accept: application/json` still gets JSON, not a redirect.
-- `JsonResource::withoutWrapping()` in `AppServiceProvider`.
-- Health check: Laravel's built-in `/up` (for staging checks).
-- Optional: GitHub Actions running `pest` + `pint --test` on every PR.
-- Remove what an API doesn't use: the welcome page and route, and maybe the Vite/Tailwind files and the `tailwindcss-development` Boost skill (decision 0.3).
+### Phase 0 — Foundation `DONE` · size S
+Make the empty project an API project. Branch `chore/phase-0-foundation`.
+- ✅ `php artisan install:api` (Sanctum 4.4, `routes/api.php`, the tokens migration); `apiPrefix: 'api/v1'` in `bootstrap/app.php`. The sample `/user` route was removed (not in the contract).
+- ✅ **Database:** MySQL for development and tests (decision 0.1); `phpunit.xml` uses `restaurant_api_test`, `RefreshDatabase` on all feature tests.
+- ✅ `ar` as the default locale (`config/app.php` + `.env.example`); `lang/ar/validation.php` for the rules we use and `lang/ar.json` for the "(and N more errors)" suffix (decision 0.2).
+- ✅ Errors always JSON for `api/*` (`shouldRenderJsonWhen`, already in the first commit), and `redirectGuestsTo(fn () => null)`: Laravel 13 sends guests to `route('login')` by default, which doesn't exist here and would turn a missing token into a `500`.
+- ✅ `JsonResource::withoutWrapping()` in `AppServiceProvider`.
+- ✅ Health check: Laravel's built-in `/up`.
+- ✅ GitHub Actions (`.github/workflows/tests.yml`): Pint + Pest, PHP 8.4, MySQL 8.0. **PHP 8.4 is the minimum** (`composer.json` `^8.4`): the lock file (Symfony 8.1, Pest 5, PHPUnit 13) doesn't install on 8.3, as the first CI run showed.
+- ✅ Removed (decision 0.3): welcome page, `routes/web.php`, Vite/Tailwind/npm files, the `tailwindcss-development` skill (and from `boost.json`), npm steps in `composer setup`; `composer dev` = `php artisan serve`.
+- ✅ Tests: `tests/Feature/Api/FoundationTest.php` (Arabic 422 without `Accept`, JSON 401 without/with a bad token, no `data` wrapper, JSON 404, no page at `/`, `/up`). The two Laravel example tests were deleted (approved).
+- ✅ Full suite on the local MySQL test database (7 tests, 2026-11-11); `migrate` run on `restaurant_api`.
 
 **Done when:** `GET /api/v1/…` routes exist, validation errors come back as Arabic JSON, and tests pass.
 
@@ -95,7 +97,7 @@ The biggest phase; the public site's main data.
 
 ### Phase 5 — Staging on Hostinger `TODO` · size M
 As soon as Phase 3 + 4 work, so the frontend can test against a real server.
-- Check the plan: SSH, PHP ≥ 8.3, MySQL, EU data centre.
+- Check the plan: SSH, **PHP ≥ 8.4**, MySQL, EU data centre.
 - Subdomain (`api-staging.<domain>`, or a temporary one) with its document root on Laravel's **`public/`**.
 - MySQL database + user; `.env` (staging values, `APP_DEBUG=false`); `php artisan key:generate`, `migrate --force`, `db:seed`.
 - `storage:link`; PHP `upload_max_filesize` / `post_max_size` ≥ 6 MB; HTTPS.
@@ -134,7 +136,7 @@ The trickiest rules.
 
 ### Phase 11 — Ordering settings `TODO` · size M
 - Public `GET /ordering`: only enabled types and branches, with the WhatsApp numbers resolved.
-- Admin `GET/PUT /admin/ordering`: checked against the saved site info (what's on needs a WhatsApp number; tables on → at least one branch on; table count 1–99).
+- Admin `GET/PUT /admin/ordering`: checked against the saved site info (what's on needs a WhatsApp number; tables on → at least one branch on; `tableCount` 0–99, and ≥ 1 when that branch is on: API-CONTRACT §4).
 - Validation: `checkOrderingInput` (only `{restaurant}` / `{name}` placeholders).
 
 **After Phase 11:** every area of the frontend can run on the API.
@@ -183,9 +185,9 @@ The limits (`PRODUCT_LIMITS`, `OFFER_LIMITS`, …) are constants in that file; c
 
 | # | Decision | Phase | Options |
 |---|---|---|---|
-| 0.1 | Local + test database | 0 | MySQL (matches Hostinger) · SQLite (simpler) |
-| 0.2 | Arabic validation texts | 0 | Write `lang/ar` ourselves for the rules we use (no dependency) · a community package (`laravel-lang`) |
-| 0.3 | Remove Vite/Tailwind/welcome page | 0 | Remove (cleaner) · keep (harmless) |
+| 0.1 | Local + test database | 0 | **Decided 2026-11-11: MySQL for both** (matches Hostinger) · ~~SQLite (simpler)~~ |
+| 0.2 | Arabic validation texts | 0 | **Decided 2026-11-11: write `lang/ar` ourselves** for the rules we use (no dependency) · ~~`laravel-lang`~~ |
+| 0.3 | Remove Vite/Tailwind/welcome page | 0 | **Decided 2026-11-11: remove** · ~~keep~~ |
 | 1.x | Schema choices | 1 | See Phase 1 |
 | 2.1 | Creating the admin account | 2 | Seeder from env vars · `php artisan admin:create` command |
 | 4.1 | Slug generation from Arabic | 4b | `Str::slug` (test on real names) · owner always types it |
