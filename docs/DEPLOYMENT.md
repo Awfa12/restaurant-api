@@ -261,7 +261,11 @@ script on a fresh checkout. Two commands it deliberately avoids:
   that's the `cache` table holding the login and rate-limit counters, so a deploy would reset them
   (CI caught it: there, no database exists).
 
-## 5. Before a demo: reset to clean data
+## 5. Optional: back to the original content
+
+**The data stays.** A deploy only runs new migrations; it never touches the content. What the
+demo shows is the seed (her mock content) plus every edit made in the dashboard since. Reset only
+when testing has left the demo messy, or to bring in a new export of her mock files (below).
 
 ```bash
 cd ~/domains/<demo>/laravel
@@ -269,12 +273,19 @@ php artisan migrate:fresh --seed --force     # allowed because APP_ENV=staging
 php artisan admin:create admin               # the users table was emptied too
 ```
 
+- **It wipes every edit and every account.** Run `admin:create` again for each person (the
+  frontend owner's test account too), and tell her first: her dashboard login ends with a `401`.
+- **The Vercel showcase reads this server.** Its menu is cached for up to an hour and refreshed
+  by a dashboard save, so after a reset it can show the old menu for up to an hour. Any menu save
+  in the dashboard refreshes it at once. Don't reset during a showing.
 - `migrate:fresh` doesn't delete files: earlier uploads stay in `storage/app/public/uploads` until
   `uploads:prune` removes the unused ones (24 hours later).
+- **New mock content from her repo:** `composer seed:export` here, review the diff, commit and
+  merge, fast-forward `staging`, `bash bin/deploy.sh`, then the reset above (the seeder refuses a
+  database with content).
 - **The owner's account:** `php artisan admin:create <his-username>` with a password made for him.
   If he doesn't buy, delete the account or change its password.
-- **Tell him what he types isn't kept.** The demo has no backups, and real staff phone numbers don't
-  belong on it.
+- **Tell him the demo has no backups.** Real staff phone numbers don't belong on it.
 
 ## 6. Rollback
 
