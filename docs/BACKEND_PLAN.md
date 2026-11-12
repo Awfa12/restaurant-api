@@ -2,7 +2,7 @@
 
 > The phases for building the Laravel API, what each one delivers, and when the frontend can switch over.
 > Source of truth for *what* the API does: `../restaurant-template/.local-docs/API-CONTRACT.md` (agreed 2026-11-11). This file is the *how* and *in what order*.
-> Status of each phase: `TODO` · `IN PROGRESS` · `DONE` (only when it exists, works, and its tests pass). **Last updated:** 2026-11-11.
+> Status of each phase: `TODO` · `IN PROGRESS` · `DONE` (only when it exists, works, and its tests pass). **Last updated:** 2026-11-12.
 
 ## 1. What we're building
 
@@ -34,6 +34,7 @@ All under `/api/v1`. Every admin endpoint is behind `auth:sanctum`.
 - **Business rules** that span records live in an Action class, inside a `DB::transaction()`, and return `409` with an Arabic message when they refuse.
 - **Lists inside a record are saved by id** (sync): sizes, phones, branches.
 - **Public vs admin:** public endpoints apply the visibility rules (BACKEND_REQUIREMENTS §7); admin endpoints return everything.
+- **Every public route goes in the `throttle:public` group** in `routes/api.php` (300 / minute per client, decision 5.5), with a test that it answers `429` over the limit. Admin routes stay behind `auth:sanctum`; login keeps its own limit.
 
 ## 2. Phases
 
@@ -93,13 +94,15 @@ The biggest phase; the public site's main data. Decisions 4.1–4.4 agreed 2026-
 - **4a Uploads `DONE`** (PR #5): `POST /admin/uploads` (multipart `image`) → `201 { url, width, height }`. WebP / PNG / JPG **detected from the content**, ≤ 5 MB, ≤ 4000 px per side, **no SVG** (it can carry scripts), random file names, Arabic messages. `OwnUploadUrl` rule (decision 4.3): an image field must be the URL of one of our uploads; `PublicImage` converts URL ↔ path. `php artisan uploads:prune` (daily): unused uploads older than 24 h; every image field is listed in `App\Support\ImageReferences`.
 - **4b Categories `DONE`** (PR #6): `GET /admin/categories`, `POST` (`201`, last in order), `PATCH /{slug}` (`name?`, `slug?`, `image?`: only what's sent changes, an empty slug keeps the current one, `image: null` removes the photo), `POST /{slug}/move`, `DELETE /{slug}` (`204`, renumbered; `409` while it has products: `ما فيك تحذف قسم فيه أصناف (N). انقلها لقسم تاني أو احذفها أول.`). Names trimmed with inner spaces collapsed, unique. Optional `slug`, otherwise `cat-xxxxxxxx` (decision 4.1, `App\Support\Slugs`). Shared `App\Actions\OrderedList` (next position, move, renumber; reused by offers, banners, reviews and best sellers).
 - **4c Products `DONE`** (PR #7): `GET /admin/products` (all, creation order), `POST` (`201`), **`PUT /{slug}` full save** (a missing optional field is cleared: `image`, `imageStyle`, `optionGroups`), **`PATCH /{slug}` quick change** (`price`, `isAvailable`, `isBestSeller`, `bestSellerOrder`; other fields ignored) (decision 4.2), `DELETE /{slug}` (`204`: sizes cascade, banner targets null, best sellers renumbered), `POST /admin/best-sellers/{slug}/move` (`409` `هالصنف مش بالأكثر مبيعاً. حدّث الصفحة.` for a product that isn't one). Sizes synced by id in `App\Actions\SaveProduct`; a size id of **another product** → `422` (and the update is also scoped to the product). Best sellers (`App\Actions\BestSellers`): on → last, or the fractional place sent by undo (1.5 → 2); off → renumbered; needs a photo (form text vs quick text); the full save keeps the place. Slugs unique across products and offers, otherwise `item-xxxxxxxx`. **Added beyond the frontend:** a quick price change that would make a size cost ≤ 0 is refused (`422` on `price`).
-- **4d Public `GET /menu` `DONE`** (PR #8): no token; `[{ category, products }]` (her `MenuSection[]`): categories in order, empty ones left out, unavailable products included, products in creation order with their sizes. **Three queries whatever the menu's size** (tested with `expectsDatabaseQueryCount`): sizes eager-loaded, each product's category set by `chaperone()` without a query. Still to add: the contract test against the frontend's exported fixture (Phase 2).
-- Validation: `checkProductInput`, `checkProductQuickChanges`, `validateCategoryName`, `validatePrice`.
+- **4d Public `GET /menu` `DONE`** (PR #8): no token; `[{ category, products }]` (her `MenuSection[]`): categories in order, empty ones left out, unavailable products included, products in creation order with their sizes. **Three queries whatever the menu's size** (tested with `expectsDatabaseQueryCount`): sizes eager-loaded, each product's category set by `chaperone()` without a query. The contract test against her data came with Phase 2: `SeedDataTest` checks `GET /menu` against the exported mock JSON, built the way her `getMenu()` builds it.
+- ✅ Validation ported (§4): `validateCategoryName` → `StoreCategoryRequest`, `UpdateCategoryRequest`; `checkProductInput` + `validatePrice` → `SaveProductRequest` (`POST` and `PUT`); `checkProductQuickChanges` → `PatchProductRequest`.
 
-**Frontend can switch:** the public menu, best sellers, cart catalog, product pages; dashboard menu, categories, products, best sellers, photos.
+**Frontend can switch:** the public menu, best sellers, cart catalog, product pages; dashboard menu, categories, products, best sellers, photos. ✅ Switched in her D7a–D7c (frontend PRs #44–#46, 2026-11-12).
 
-### Phase 5 — Demo server (staging) on Hostinger `IN PROGRESS` · size M
-PR #11 (branch `feat/phase-5-staging`), fix PR (branch `fix/deploy-caches`). Decisions 5.1–5.6 (2026-11-11, §6). **Purpose:** show the product to the restaurant owner. Seed data only; if he buys, production gets its own hosting (Phase 12). Hostinger Premium (shared), PHP 8.4, MySQL, Frankfurt. The method is the user's Suwayda-Under-Siege setup, adapted to an API.
+**Done when:** the menu endpoints match the contract, with tests. ✅
+
+### Phase 5 — Demo server (staging) on Hostinger `DONE` · size M
+PR #11 (branch `feat/phase-5-staging`), PR #12 (branch `fix/deploy-caches`). Contract amended in frontend PRs #42 and #43. Decisions 5.1–5.6 (2026-11-11, §6). **Purpose:** show the product to the restaurant owner. Seed data only; if he buys, production gets its own hosting (Phase 12). Hostinger Premium (shared), PHP 8.4, MySQL, Frankfurt. The method is the user's Suwayda-Under-Siege setup, adapted to an API.
 - ✅ **5.1 Layout:** the repo cloned over SSH (read-only deploy key of its own) into `~/domains/<demo>/laravel/`, next to `public_html/`, which holds only an `index.php` shim and two symlinks (`.htaccess`, `storage`). The code and `.env` are never reachable from the web.
 - ✅ **5.3 `bin/deploy.sh`** (manual, over SSH): refuses `main`, a missing `.env`, `APP_ENV` local/testing/empty, `APP_DEBUG=true`, an empty `APP_KEY`, and the gate without a key; then fetch + `reset --hard`, `composer install --no-dev`, `migrate --force`, `composer cache:build` (config, routes, events: not `optimize`, which needs Blade views), `storage:link`, `chmod`. Wrapped in `main()` so the reset can't change the script mid-run. Branch flow `main` → `staging` (`--ff-only`).
 - ✅ **5.2** `APP_ENV=staging` (strict mode on, `migrate:fresh --seed` allowed to reset the demo), `APP_DEBUG=false`, daily logs kept 14 days: `.env.staging.example`.
@@ -107,12 +110,14 @@ PR #11 (branch `feat/phase-5-staging`), fix PR (branch `fix/deploy-caches`). Dec
 - ✅ **5.6** `API_REQUIRE_FRONTEND_KEY`: with it on, every `/api/v1` request needs `X-Frontend-Key` (`403` «ما عندك صلاحية» otherwise; `/up` stays open; fails closed). The shared key check lives in `App\Support\FrontendKey` (also used by the login IP).
 - ✅ `public/.htaccess` denies `.md .sh .yml .lock .sql .log .env .ini …` over HTTP. CI also runs on pushes to `staging`.
 - ✅ Tests: `tests/Feature/Http/Middleware/RequireFrontendKeyTest.php`, the `throttle:public` group in `tests/Feature/Providers/AppServiceProviderTest.php`. Both checked by removing the wiring once.
-- ✅ Runbook: [DEPLOYMENT.md](DEPLOYMENT.md) (hPanel, SSH, deploy key, shim, `.env`, first deploy, cron, smoke tests, demo reset, rollback, known Hostinger problems).
+- ✅ Runbook: [DEPLOYMENT.md](DEPLOYMENT.md) (hPanel, SSH, deploy key, shim, `.env`, first deploy, cron, smoke tests, optional reset, rollback, known Hostinger problems).
 - ✅ On the server (2026-11-11): temporary subdomain with HTTPS, PHP 8.4.27 (web and SSH), MariaDB 11.8 database with its own user, deploy key, clone, shim, `.env`, first deploy (stopped at `optimize`'s view step: fixed in `bin/deploy.sh`, the rest finished by hand), `db:seed --force`, `admin:create`. From outside: `/up` 200; API without the key 403 (twice, not cached by Hostinger's CDN); `.env`, logs and folder listings refused.
-- ⬜ The user: cron, the Postman checks with the key (menu, login, `/auth/me`, one photo), the `.sql` deny test; after the fix PR, fast-forward `staging` and re-run `bash bin/deploy.sh`.
-- ⬜ Sent to the frontend **privately**: the URL, `FRONTEND_API_KEY` (sent on **every** request to the demo), a test admin account; she adds the image host to `images.remotePatterns` and sets Vercel's region to `fra1`. Contract note on the key and the public rate limit: PROJECT_STATUS §5.2.
+- ✅ After PR #12: `staging` fast-forwarded and `bash bin/deploy.sh` ran clean. The checks with the key passed (menu, login, `/auth/me`, one photo), and a real `.sql` file is refused (`403`).
+- ✅ Sent to the frontend **privately**: the URL, `FRONTEND_API_KEY` (sent on **every** request to the demo) and a test admin account. Contract note on the key and the public rate limit: frontend PRs #42 and #43.
+- ✅ **Milestone M1 (2026-11-12):** her D7a (login, PR #44), D7b (public menu, PR #45) and D7c (dashboard menu area, PR #46) are merged. Her Vercel **production** site is the owner's showcase (she has no preview environment), so `API_BASE_URL` and `FRONTEND_API_KEY` are set there and it runs on the demo server. A cold build reads `GET /menu` 56 times with 7 real requests (the Data Cache shares one), far under the limit.
+- ⬜ Follow-up for the user: the cron in hPanel (DEPLOYMENT.md §3.7). Until it runs, expired tokens and unused uploads aren't pruned; nothing breaks.
 
-**Done when:** the frontend's preview deployment logs in and shows the menu from the demo server.
+**Done when:** the frontend logs in and shows the menu from the demo server. ✅ (on the Vercel showcase)
 
 ### Phase 6 — Offers `TODO` · size M
 - Public `GET /offers` (section + active offers, `null` when the section is off).
@@ -159,7 +164,7 @@ The trickiest rules.
 
 | Milestone | After phase | The frontend can |
 |---|---|---|
-| M1: staging + login + menu | 5 | Build `apiFetch`, switch login and the whole menu area |
+| M1: staging + login + menu ✅ 2026-11-12 | 5 | Build `apiFetch`, switch login and the whole menu area (her D7a–D7c, PRs #44–#46) |
 | M2: content | 6–9 | Switch offers, banners, reviews, hero, about |
 | M3: restaurant settings | 10–11 | Switch site info and ordering; remove mock data and the browser draft |
 | M4: launch | 12 | Go live on the domain, print QR codes |
@@ -169,7 +174,7 @@ The trickiest rules.
 | Frontend function | Phase | Laravel |
 |---|---|---|
 | `validateCategoryName` | 4b | `StoreCategoryRequest`, `UpdateCategoryRequest` |
-| `checkProductInput`, `validatePrice`, `parsePriceInput` limits | 4c | `StoreProductRequest`, `UpdateProductRequest` |
+| `checkProductInput`, `validatePrice`, `parsePriceInput` limits | 4c | `SaveProductRequest` (`POST` and `PUT`) |
 | `checkProductQuickChanges` | 4c | `PatchProductRequest` |
 | `checkOfferInput` | 6 | `StoreOfferRequest` / `UpdateOfferRequest` |
 | `checkSectionText` | 6, 8 | Custom rule `MarkedText` (length without `**`, odd `**` refused) |
