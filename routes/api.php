@@ -2,10 +2,13 @@
 
 use App\Http\Controllers\Api\V1\Admin\BestSellerController;
 use App\Http\Controllers\Api\V1\Admin\CategoryController;
+use App\Http\Controllers\Api\V1\Admin\OfferController;
+use App\Http\Controllers\Api\V1\Admin\OffersSectionController;
 use App\Http\Controllers\Api\V1\Admin\ProductController;
 use App\Http\Controllers\Api\V1\Admin\UploadController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\MenuController;
+use App\Http\Controllers\Api\V1\OffersController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -20,8 +23,10 @@ use Illuminate\Support\Facades\Route;
 
 // Public site (API-CONTRACT §3): no token, hidden data never leaves the server.
 // throttle:public = 300 per minute per client (decision 5.5, AppServiceProvider).
+// Every public route goes in this group (tests/Feature/Http/PublicRoutesTest.php).
 Route::middleware('throttle:public')->group(function () {
     Route::get('menu', MenuController::class)->name('menu');
+    Route::get('offers', OffersController::class)->name('offers');
 });
 
 Route::prefix('auth')->name('auth.')->group(function () {
@@ -52,4 +57,13 @@ Route::prefix('admin')->name('admin.')->middleware('auth:sanctum')->group(functi
     Route::patch('products/{product:slug}', [ProductController::class, 'patch'])->name('products.patch');
     Route::delete('products/{product:slug}', [ProductController::class, 'destroy'])->name('products.destroy');
     Route::post('best-sellers/{product:slug}/move', [BestSellerController::class, 'move'])->name('best-sellers.move');
+
+    // {offer} is the slug. PUT = whole offer, PATCH = on/off from the list (API-CONTRACT §2).
+    Route::get('offers', [OfferController::class, 'index'])->name('offers.index');
+    Route::post('offers', [OfferController::class, 'store'])->name('offers.store');
+    Route::put('offers/{offer:slug}', [OfferController::class, 'update'])->name('offers.update');
+    Route::patch('offers/{offer:slug}', [OfferController::class, 'patch'])->name('offers.patch');
+    Route::delete('offers/{offer:slug}', [OfferController::class, 'destroy'])->name('offers.destroy');
+    Route::post('offers/{offer:slug}/move', [OfferController::class, 'move'])->name('offers.move');
+    Route::patch('offers-section', OffersSectionController::class)->name('offers-section.update');
 });

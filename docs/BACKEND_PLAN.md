@@ -34,7 +34,7 @@ All under `/api/v1`. Every admin endpoint is behind `auth:sanctum`.
 - **Business rules** that span records live in an Action class, inside a `DB::transaction()`, and return `409` with an Arabic message when they refuse.
 - **Lists inside a record are saved by id** (sync): sizes, phones, branches.
 - **Public vs admin:** public endpoints apply the visibility rules (BACKEND_REQUIREMENTS §7); admin endpoints return everything.
-- **Every public route goes in the `throttle:public` group** in `routes/api.php` (300 / minute per client, decision 5.5), with a test that it answers `429` over the limit. Admin routes stay behind `auth:sanctum`; login keeps its own limit.
+- **Every public route goes in the `throttle:public` group** in `routes/api.php` (300 / minute per client, decision 5.5). `tests/Feature/Http/PublicRoutesTest.php` enforces it for every route without a token. Admin routes stay behind `auth:sanctum`; login keeps its own limit.
 
 ## 2. Phases
 
@@ -119,10 +119,17 @@ PR #11 (branch `feat/phase-5-staging`), PR #12 (branch `fix/deploy-caches`). Con
 
 **Done when:** the frontend logs in and shows the menu from the demo server. ✅ (on the Vercel showcase)
 
-### Phase 6 — Offers `TODO` · size M
-- Public `GET /offers` (section + active offers, `null` when the section is off).
-- Admin: offers CRUD, on/off, move, delete; `PATCH /admin/offers-section` (partial). Offer slugs share the URL space with products.
-- Validation: `checkOfferInput`, `checkSectionText` (lengths without `**`, odd `**` refused: a custom rule reused later).
+### Phase 6 — Offers `IN PROGRESS` · size M
+Branch `feat/phase-6-offers`: code and tests done; left: the PR, `staging` + `bash bin/deploy.sh`, then the frontend turns `offers` on. Decisions 6.1–6.3 (2026-11-17, §6), sent to the frontend as the D7 contract answers. No migration: the table and the `offers_section` settings row exist since Phase 1, and the seed already has the offers.
+- ✅ **Public `GET /offers`** (in `throttle:public`): her `OffersContent` flat, `{ isEnabled, eyebrow, title, menuCardImage?, offers }`, only active offers, in order. A raw `null` body when the section is off **or** has no active offer (decision 6.3; `response()->json(null)` would send `{}`, which her reader refuses: tested).
+- ✅ **Admin:** `GET /admin/offers` = the same flat shape with every offer (decision 6.2); `POST` (`201`, last, optional `slug` else `offer-xxxxxxxx`, unique against products too); **`PUT /{slug}` whole offer** (a missing `imageStyle` / `badge` is cleared; an empty slug keeps the current one); **`PATCH /{slug}` = `isActive` only** (decision 6.1); `DELETE` (`204`, renumbered); `POST /{slug}/move` → every offer (`OrderedList`). `PATCH /admin/offers-section`: partial, returns her `OffersSettings`, `menuCardImage: null` removes the photo (`App\Support\OffersSection` reads and writes the settings row; photos stored as paths).
+- ✅ **Validation** (§4): `checkOfferInput` → `SaveOfferRequest` (empty item lines dropped like her form; the price rules and texts shared with products); `checkSectionText` → `UpdateOffersSectionRequest` + the new rule **`App\Rules\MarkedText`** (length without `**`, odd `**` refused; reused by reviews and About).
+- ✅ **Guard for the cross-cutting rule:** `tests/Feature/Http/PublicRoutesTest.php` fails when any route without a token (login excepted) is outside `throttle:public`. Checked by moving `/offers` out of the group once.
+- ✅ Tests: `OffersControllerTest`, `Admin/OfferControllerTest`, `Admin/OffersSectionControllerTest`, `Rules/MarkedTextTest`, `PublicRoutesTest`, and `SeedDataTest` now checks that the seeded offers come out of `GET /offers` exactly as her mock (photos as our uploads). 244 tests.
+
+**Frontend can switch:** offers (her D7d, already written): `API_AREAS` gets `offers` once this is on staging.
+
+**Done when:** the offers endpoints match the contract answers, with tests, and run on staging.
 
 ### Phase 7 — Menu banners `TODO` · size M
 - Public `GET /banners`: active slides in order; a button whose target is gone (offers off, category empty or deleted, product gone) is dropped, the slide stays.
@@ -176,8 +183,8 @@ The trickiest rules.
 | `validateCategoryName` | 4b | `StoreCategoryRequest`, `UpdateCategoryRequest` |
 | `checkProductInput`, `validatePrice`, `parsePriceInput` limits | 4c | `SaveProductRequest` (`POST` and `PUT`) |
 | `checkProductQuickChanges` | 4c | `PatchProductRequest` |
-| `checkOfferInput` | 6 | `StoreOfferRequest` / `UpdateOfferRequest` |
-| `checkSectionText` | 6, 8 | Custom rule `MarkedText` (length without `**`, odd `**` refused) |
+| `checkOfferInput` | 6 ✅ | `SaveOfferRequest` (`POST` and `PUT`) |
+| `checkSectionText` | 6 ✅, 8 | `UpdateOffersSectionRequest` + custom rule `MarkedText` (length without `**`, odd `**` refused) |
 | `checkBannerInput` | 7 | `StoreBannerRequest` / `UpdateBannerRequest` |
 | `checkReviewInput`, `checkReviewsSettings` | 8 | Review requests + section request |
 | `checkHeroInput`, `checkAboutInput` | 9 | `UpdateHeroRequest`, `UpdateAboutRequest` |
@@ -212,7 +219,11 @@ The limits (`PRODUCT_LIMITS`, `OFFER_LIMITS`, …) are constants in that file; c
 | 5.4 | CI database engine | 5 | **Decided 2026-11-11: stays MySQL 8.0.** The demo turned out to be **MariaDB 11.8** (hPanel labels it "MySQL"), used with `DB_CONNECTION=mysql` like Suwayda: our schema needs nothing engine-specific (3 `json` columns, no UUID columns, no JSON queries). A MariaDB CI job is optional: revisit before a phase adds JSON queries or UUIDs, and for the production host |
 | 5.5 | Public rate limit | 5 | **Decided 2026-11-11: 300 / minute per client** (`throttle:public`) |
 | 5.6 | Keeping the demo private | 5 | **Decided 2026-11-11: `API_REQUIRE_FRONTEND_KEY`:** every `/api/v1` request needs `X-Frontend-Key` · ~~Basic Auth~~ (same `Authorization` header as the Bearer tokens) · ~~no gate~~ |
-| 7.1 | Banner `href` in the public response | 7 | Backend resolves the link · frontend builds it from the target |
+| 6.1 | Full save vs on/off for offers, banners, reviews | 6 | **Decided 2026-11-17: `PUT` = whole record, `PATCH` = `isActive` / `isVisible` only** (the contract's §2 rule; its §4 table listed only `PATCH`) |
+| 6.2 | Shape of `GET /admin/offers` and `/admin/reviews` | 6 | **Decided 2026-11-17: her `OffersContent` / `ReviewsContent`, flat** (section settings + every item; what her dashboard seed reads) · ~~a list + a separate `GET /admin/offers-section`~~ (one more request and endpoint, no gain) · ~~`{ section, offers }`~~ (not her type) |
+| 6.3 | Public `null` | 6 | **Decided 2026-11-17: `null` when the section is off or has no active (visible) item**, as her mock-mode `getOffersContent` / `getReviewsContent` |
+| 7.1 | Banner `href` in the public response | 7 | **Decided 2026-11-17: the stored `action.target`; the frontend builds the link** (routes are hers); the API leaves out a button whose target is gone · ~~backend resolves the link~~ |
+| 11.1 | Public `GET /ordering` keys | 11 | **Decided 2026-11-17: her `OrderingOptions`** without `restaurantName` / `timeZone`: `{ delivery: { fee, whatsApp } \| null, dineInBranches: [{ id, name, tableCount, whatsApp }], message, thankYou }` |
 
 A decision that changes the API's behaviour also goes into `API-CONTRACT.md` (PR to the frontend repo).
 

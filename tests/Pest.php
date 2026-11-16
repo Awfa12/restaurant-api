@@ -1,6 +1,9 @@
 <?php
 
+use App\Models\Setting;
+use App\Models\Upload;
 use App\Models\User;
+use App\Support\PublicImage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -34,4 +37,26 @@ function actingAsAdmin(?User $admin = null): User
     Sanctum::actingAs($admin);
 
     return $admin;
+}
+
+/**
+ * The URL of a stored upload, as POST /admin/uploads returns it.
+ */
+function uploadedImageUrl(): string
+{
+    return PublicImage::url(Upload::factory()->create()->path);
+}
+
+/**
+ * Stores the offers section's settings, as the seeder does (docs/DATABASE.md §3).
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function storeOffersSection(array $overrides = []): array
+{
+    $value = array_merge(['isEnabled' => true, 'eyebrow' => 'عروض أهل الكرم', 'title' => 'الكرم **بالعروض**'], $overrides);
+    Setting::updateOrCreate(['key' => 'offers_section'], ['value' => $value]);
+
+    return $value;
 }
