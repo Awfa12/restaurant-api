@@ -5,21 +5,12 @@ use App\Models\Category;
 use App\Models\Offer;
 use App\Models\Product;
 use App\Models\ProductSize;
-use App\Models\Upload;
 use App\Support\PublicImage;
 
 /*
  * Dashboard products (API-CONTRACT §4 Products, decisions 4.1 and 4.2;
  * rules and texts from the frontend's checkProductInput / checkProductQuickChanges).
  */
-
-/**
- * The URL of a stored upload, as POST /admin/uploads returns it.
- */
-function uploadedImageUrl(): string
-{
-    return PublicImage::url(Upload::factory()->create()->path);
-}
 
 /**
  * A valid whole product, as the dashboard's form sends it (ProductInput).

@@ -2,13 +2,13 @@
 
 > What this backend is, what's been decided, where it stands, and what's next. Keep it short and current; update it at the end of each feature.
 
-**Last updated:** 2026-11-12 · **Plan:** [BACKEND_PLAN.md](BACKEND_PLAN.md) (phases 0–12) · **Done:** Phase 0 foundation (PR #2) · **Done:** Phase 1 database (PR #3) · **Done:** Phase 3 auth (PR #4) · **Done:** Phase 4 menu: 4a uploads (PR #5), 4b categories (PR #6), 4c products (PR #7), 4d public `GET /menu` (PR #8) · **Contract amended** with Phases 1, 3 and 4 (frontend PR #39, merged) · **Done:** Phase 2 seed data (PR #10) · **Done:** Phase 5, the demo server on Hostinger (PRs #11, #12; contract amended in frontend PRs #42, #43) · **Milestone M1 reached (2026-11-12):** the frontend's login and whole menu area run on the demo server (her D7a–D7c, frontend PRs #44–#46), live on her Vercel showcase · 183 tests passing · **Next:** Phase 6 offers
+**Last updated:** 2026-11-17 · **Plan:** [BACKEND_PLAN.md](BACKEND_PLAN.md) (phases 0–12) · **Done:** Phase 0 foundation (PR #2) · **Done:** Phase 1 database (PR #3) · **Done:** Phase 3 auth (PR #4) · **Done:** Phase 4 menu: 4a uploads (PR #5), 4b categories (PR #6), 4c products (PR #7), 4d public `GET /menu` (PR #8) · **Contract amended** with Phases 1, 3 and 4 (frontend PR #39, merged) · **Done:** Phase 2 seed data (PR #10) · **Done:** Phase 5, the demo server on Hostinger (PRs #11, #12; contract amended in frontend PRs #42, #43) · **Milestone M1 reached (2026-11-12):** the frontend's login and whole menu area run on the demo server (her D7a–D7c, frontend PRs #44–#46), live on her Vercel showcase · **In progress:** Phase 6 offers (branch `feat/phase-6-offers`, code and tests done; 244 tests passing) · **Frontend ahead of us (2026-11-17):** her PRs #47–#49 wired every area to the API, so her Vercel builds fail until she adds `API_AREAS` (§5.3)
 
 ## 1. What this is
 
 The Laravel REST API for **Ahl Al Karam (أهل الكرم)**, a shawarma restaurant website + digital menu. Built to be reused for other restaurants (one restaurant per deployment, not multi-tenant).
 
-- **Frontend** (separate repo, owner `rashahatoum`): Next.js 16 on Vercel, at `../restaurant-template` on this machine. Public menu, cart, WhatsApp ordering, and an owner dashboard. It started on mock data with the dashboard saving in the browser; **this API replaces both, one area at a time**. Since her D7 (2026-11-12), login and the whole menu area (public menu, categories, products, best sellers, their photos) use this API when `API_BASE_URL` is set; offers, banners, reviews, hero, about, site info and ordering are still mock data + the browser draft.
+- **Frontend** (separate repo, owner `rashahatoum`): Next.js 16 on Vercel, at `../restaurant-template` on this machine. Public menu, cart, WhatsApp ordering, and an owner dashboard. It started on mock data with the dashboard saving in the browser; **this API replaces both, one area at a time**. Since her D7 (2026-11-12), login and the whole menu area (public menu, categories, products, best sellers, their photos) use this API when `API_BASE_URL` is set. Her PRs #47–#49 (D7d–D7i, 2026-11-15/16) then wired **every other area** too (offers, banners, reviews, hero + about, site info, ordering), written against the contract and a local fake API, ahead of our Phases 6–11.
 - **This repo** (`Awfa12/restaurant-api`): the database, the content, the one admin login, image uploads, and validation with Arabic messages.
 - **Out of scope:** orders are **not stored** (they go from the customer's phone straight to WhatsApp), and there are no payments, customer accounts, analytics, email/SMS, or multiple restaurants.
 
@@ -66,6 +66,7 @@ Full details in the contract; the short version:
 | Categories | ✅ Phase 4b: `/admin/categories` list, create, update (name, slug, photo), move, delete (`409` with products). Ordered lists use `App\Actions\OrderedList`; slugs `App\Support\Slugs` |
 | Products | ✅ Phase 4c: `/admin/products` list, create, `PUT` full save (sizes synced by id), `PATCH` quick change, delete; `/admin/best-sellers/{id}/move`. `App\Actions\SaveProduct`, `App\Actions\BestSellers` |
 | Public menu | ✅ Phase 4d: `GET /api/v1/menu` (no token), her `MenuSection[]`, 3 queries |
+| Offers | 🟡 Phase 6 (branch): public `GET /offers` (her `OffersContent`, active only, raw `null` when off or empty); `/admin/offers` flat GET, `POST`, `PUT`, `PATCH { isActive }`, `DELETE`, move; `PATCH /admin/offers-section`. `App\Support\OffersSection`, `App\Rules\MarkedText` |
 | Seed data | ✅ Phase 2: `database/seeders/data/` (8 JSON files + 21 photos, exported from her mock files with `composer seed:export`; needs Node 22 locally, never on the server). `php artisan migrate:fresh --seed` locally; refuses on a database that has content |
 | Sessions / queue | `array` / `sync` (no `sessions` or queue tables; the daily jobs run from cron: token prune and uploads prune) |
 | Tests | Admin tests sign in with `actingAsAdmin()` (`tests/Pest.php`, a Sanctum token): Laravel's `actingAs()` uses the session guard, which Sanctum doesn't check here. `APP_DEBUG=false` in `phpunit.xml`, so errors have the production shape (`{ message }`, no trace) |
@@ -78,7 +79,12 @@ The full sequence is in [BACKEND_PLAN.md](BACKEND_PLAN.md):
 1. ~~Phase 0 foundation~~ (PR #2) · ~~Phase 1 database~~ (PR #3) · ~~Phase 3 auth~~ (PR #4) · ~~Phase 4a uploads~~ (PR #5) · ~~Phase 4b categories~~ (PR #6) · ~~Phase 4c products~~ (PR #7) · ~~Phase 4d public menu~~ (PR #8): **Phase 4 done**. ~~Contract PR~~ (frontend PR #39, merged: §5.1).
 2. ~~Phase 2 seed data~~ (PR #10): we export the mock data ourselves (`composer seed:export`); `migrate:fresh --seed` reproduces her content and slugs.
 3. ~~Phase 5, the demo server~~ (PRs #11, #12; contract: frontend PRs #42, #43): up, seeded, checked with the key. ~~Milestone M1~~ (2026-11-12): her D7a login (#44), D7b public menu (#45), D7c dashboard menu area (#46), live on the Vercel showcase. Left for the user: the cron in hPanel ([DEPLOYMENT.md](DEPLOYMENT.md) §3.7); optionally remove `DASHBOARD_USERNAME` / `DASHBOARD_PASSWORD` from Vercel (unused now that login goes through Laravel).
-4. **Phase 6: offers, next** (reuses `OrderedList`, `Slugs`, `OwnUploadUrl`, the `PUT`/`PATCH` convention, and goes in `throttle:public`). The seed data already has them. Her side switches it the way D7c did the menu: offers' photos then upload to us instead of IndexedDB.
+4. **Phase 6: offers** (branch `feat/phase-6-offers`, code and tests done): open the PR, merge, fast-forward `staging`, `bash bin/deploy.sh`, then tell her `offers` can go into `API_AREAS` (her D7d is already written).
+5. **Phases 7–11** in order: banners, reviews, hero + About, site info, ordering; each one deployed before she turns that area on. **Site info and ordering switch on together** (ordering points at the phone and branch ids of site info).
+
+### 5.3 The frontend is ahead (2026-11-17)
+
+Her PRs #47–#49 wired every area to the API while ours had only the menu, so every Vercel build fails at `GET /offers` (Vercel keeps the #46 deployment live) and her dashboard can't load against the demo. Agreed fix, on her side: an **`API_AREAS`** switch (`API_AREAS=menu` now, one area added per backend phase). Her five open contract points are answered (decisions 6.1–6.3, 7.1, 11.1) in a docs-only contract PR prepared for her repo (the user opens it); once each area works on staging she drops the extra shapes her code accepts.
 
 ### 5.2 Contract note from Phase 5: done
 

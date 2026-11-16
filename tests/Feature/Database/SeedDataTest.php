@@ -12,6 +12,7 @@ use App\Rules\OwnUploadUrl;
 use App\Support\ImageReferences;
 use App\Support\PublicImage;
 use Database\Seeders\Support\SeedData;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
@@ -104,6 +105,24 @@ it('serves the mock menu from GET /menu: same slugs, names, prices, sizes, order
 
     $response->assertOk();
     expect(comparableMenu($response->json()))->toBe(expectedMenuFromMock());
+});
+
+it('serves the mock offers from GET /offers: same section texts, offers, order and fields, photos as our uploads', function () {
+    $this->seed();
+    $mock = SeedData::read('offers');
+    $withoutImages = fn (array $offers) => array_map(fn (array $offer) => Arr::except($offer, 'image'), $offers);
+    $activeMockOffers = array_values(array_filter($mock['offers'], fn (array $offer) => $offer['isActive']));
+
+    $response = $this->getJson('/api/v1/offers');
+
+    $response->assertOk();
+    $served = $response->json();
+    expect(Arr::only($served, ['isEnabled', 'eyebrow', 'title']))->toBe(Arr::only($mock, ['isEnabled', 'eyebrow', 'title']))
+        ->and($withoutImages($served['offers']))->toBe($withoutImages($activeMockOffers));
+
+    foreach ([$served['menuCardImage'], ...array_column($served['offers'], 'image')] as $url) {
+        expect(Validator::make(['image' => $url], ['image' => [new OwnUploadUrl]])->passes())->toBeTrue();
+    }
 });
 
 it('keeps the slugs that are printed or shared: branches, products, offers, categories', function () {
