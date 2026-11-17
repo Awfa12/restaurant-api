@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 use App\Actions\OrderedList;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Admin\MoveRequest;
-use App\Http\Requests\Api\V1\Admin\PatchOfferRequest;
+use App\Http\Requests\Api\V1\Admin\PatchIsActiveRequest;
 use App\Http\Requests\Api\V1\Admin\SaveOfferRequest;
 use App\Http\Resources\OfferResource;
 use App\Http\Resources\OffersContentResource;
@@ -81,7 +81,7 @@ class OfferController extends Controller
     /**
      * PATCH /admin/offers/{id} { isActive }: on or off from the list.
      */
-    public function patch(PatchOfferRequest $request, Offer $offer): OfferResource
+    public function patch(PatchIsActiveRequest $request, Offer $offer): OfferResource
     {
         if ($request->has('isActive')) {
             $offer->update(['is_active' => $request->boolean('isActive')]);

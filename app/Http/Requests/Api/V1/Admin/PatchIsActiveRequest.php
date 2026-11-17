@@ -5,10 +5,11 @@ namespace App\Http\Requests\Api\V1\Admin;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * PATCH /admin/offers/{id}: the on/off switch from the list (frontend
- * setOfferActive). Only `isActive`; other fields are ignored.
+ * PATCH /admin/{offers|banners}/{id}: the on/off switch from a list
+ * (frontend setOfferActive / setBannerActive, API-CONTRACT §2). Only
+ * `isActive`; other fields are ignored.
  */
-class PatchOfferRequest extends FormRequest
+class PatchIsActiveRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.

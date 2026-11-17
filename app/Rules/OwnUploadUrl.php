@@ -25,10 +25,19 @@ class OwnUploadUrl implements ValidationRule
      */
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
-        $path = is_string($value) ? PublicImage::pathFromUrl($value) : null;
-
-        if ($path === null || ! Upload::where('path', $path)->exists()) {
+        if (! self::accepts($value)) {
             $fail(self::MESSAGE);
         }
+    }
+
+    /**
+     * Whether the value is the URL of one of our uploads (for checks that
+     * report on another key, e.g. a banner's `image.src` on `image`).
+     */
+    public static function accepts(mixed $value): bool
+    {
+        $path = is_string($value) ? PublicImage::pathFromUrl($value) : null;
+
+        return $path !== null && Upload::where('path', $path)->exists();
     }
 }

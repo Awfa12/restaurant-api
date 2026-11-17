@@ -119,23 +119,29 @@ PR #11 (branch `feat/phase-5-staging`), PR #12 (branch `fix/deploy-caches`). Con
 
 **Done when:** the frontend logs in and shows the menu from the demo server. ✅ (on the Vercel showcase)
 
-### Phase 6 — Offers `IN PROGRESS` · size M
-Branch `feat/phase-6-offers`: code and tests done; left: the PR, `staging` + `bash bin/deploy.sh`, then the frontend turns `offers` on. Decisions 6.1–6.3 (2026-11-17, §6), sent to the frontend as the D7 contract answers. No migration: the table and the `offers_section` settings row exist since Phase 1, and the seed already has the offers.
+### Phase 6 — Offers `DONE` · size M
+PR #14 (branch `feat/phase-6-offers`), on staging 2026-11-17. Frontend: contract answers (her PR #50), `API_AREAS` (#51), offers live after the dashboard pass on the demo (#53). Decisions 6.1–6.3 (2026-11-17, §6), sent to the frontend as the D7 contract answers. No migration: the table and the `offers_section` settings row exist since Phase 1, and the seed already has the offers.
 - ✅ **Public `GET /offers`** (in `throttle:public`): her `OffersContent` flat, `{ isEnabled, eyebrow, title, menuCardImage?, offers }`, only active offers, in order. A raw `null` body when the section is off **or** has no active offer (decision 6.3; `response()->json(null)` would send `{}`, which her reader refuses: tested).
 - ✅ **Admin:** `GET /admin/offers` = the same flat shape with every offer (decision 6.2); `POST` (`201`, last, optional `slug` else `offer-xxxxxxxx`, unique against products too); **`PUT /{slug}` whole offer** (a missing `imageStyle` / `badge` is cleared; an empty slug keeps the current one); **`PATCH /{slug}` = `isActive` only** (decision 6.1); `DELETE` (`204`, renumbered); `POST /{slug}/move` → every offer (`OrderedList`). `PATCH /admin/offers-section`: partial, returns her `OffersSettings`, `menuCardImage: null` removes the photo (`App\Support\OffersSection` reads and writes the settings row; photos stored as paths).
 - ✅ **Validation** (§4): `checkOfferInput` → `SaveOfferRequest` (empty item lines dropped like her form; the price rules and texts shared with products); `checkSectionText` → `UpdateOffersSectionRequest` + the new rule **`App\Rules\MarkedText`** (length without `**`, odd `**` refused; reused by reviews and About).
 - ✅ **Guard for the cross-cutting rule:** `tests/Feature/Http/PublicRoutesTest.php` fails when any route without a token (login excepted) is outside `throttle:public`. Checked by moving `/offers` out of the group once.
 - ✅ Tests: `OffersControllerTest`, `Admin/OfferControllerTest`, `Admin/OffersSectionControllerTest`, `Rules/MarkedTextTest`, `PublicRoutesTest`, and `SeedDataTest` now checks that the seeded offers come out of `GET /offers` exactly as her mock (photos as our uploads). 244 tests.
 
-**Frontend can switch:** offers (her D7d, already written): `API_AREAS` gets `offers` once this is on staging.
+**Frontend can switch:** offers. ✅ Switched (`API_AREAS=menu,offers` on Vercel Production).
 
-**Done when:** the offers endpoints match the contract answers, with tests, and run on staging.
+**Done when:** the offers endpoints match the contract answers, with tests, and run on staging. ✅
 
-### Phase 7 — Menu banners `TODO` · size M
-- Public `GET /banners`: active slides in order; a button whose target is gone (offers off, category empty or deleted, product gone) is dropped, the slide stays.
-- Admin: CRUD, on/off, move. Target stored as `{ kind, categoryId | productId }`, never a link.
-- Validation: `checkBannerInput`.
-- **Decision 7.1:** does the public response send the resolved `href` (the frontend's `MenuBannerSlideData`) or only the target, leaving the frontend to build the link? The contract allows both.
+### Phase 7 — Menu banners `IN PROGRESS` · size M
+Branch `feat/phase-7-banners`: code and tests done; left: the PR, `staging` + `bash bin/deploy.sh`, then the frontend turns `banners` on. Decisions 7.1–7.4 (2026-11-17, §6). No migration: the table, its target keys (null on delete) and the seed exist since Phases 1 and 2.
+- ✅ **Public `GET /banners`** (in `throttle:public`): her `MenuBanner[]`, active slides in order, `action.target` as stored (decision 7.1). A button that leads nowhere is **left out, the slide stays** (decision 7.3): a deleted category or product, a category with no products (not on the public menu), offers hidden (`OffersSection::isShown()`, the same rule as `GET /offers`' `null`). An unavailable product keeps its button (the menu still shows it). **5 queries whatever the number of slides** (tested with `expectsDatabaseQueryCount`).
+- ✅ **Admin:** `GET /admin/banners` = every slide, a deleted target sent with an empty id (`productId: ""`) so the dashboard shows "target gone"; `POST` (`201`, last); **`PUT /{id}` whole slide** (a missing eyebrow or button is cleared); **`PATCH /{id}` = `isActive` only**; `DELETE` (`204`, renumbered); `POST /{id}/move` → every slide. Ids are the database id as a string.
+- ✅ **Validation** (§4): `checkBannerInput` → `SaveBannerRequest`, errors on the contract's keys (`image`, not `image.src`; `action.label`, `action.target`). Title line breaks normalized to `\n` (two lines × 22). A gone target (`""`) is refused like an unknown one. `image.alt` ≤ 120, falls back to the title on one line (decision 7.2). One new text beyond hers: «اختار وين بياخد الزر» for an unknown target kind (her form can't send one).
+- ✅ **Shared pieces:** `PatchIsActiveRequest` (was `PatchOfferRequest`, now offers and banners), `OwnUploadUrl::accepts()` (the image check reported on another key), `OffersSection::isShown()`.
+- ✅ Tests: `BannersControllerTest`, `Admin/BannerControllerTest`, `SeedDataTest` (seeded banners through `GET /banners` = her mock). **Found and fixed:** `OwnUploadUrlTest`'s "refuses" dataset passed a closure instead of a URL (Pest passes a `Closure`-typed dataset value uncalled), so it passed whatever the rule did; now it fails when the rule is broken (checked). 287 tests.
+
+**Frontend can switch:** banners (her D7e, already written): `API_AREAS` gets `banners` once this is on staging.
+
+**Done when:** the banner endpoints match the contract, with tests, and run on staging.
 
 ### Phase 8 — Reviews `TODO` · size S
 - Public `GET /reviews` (section + visible reviews, `null` when off).
@@ -185,7 +191,7 @@ The trickiest rules.
 | `checkProductQuickChanges` | 4c | `PatchProductRequest` |
 | `checkOfferInput` | 6 ✅ | `SaveOfferRequest` (`POST` and `PUT`) |
 | `checkSectionText` | 6 ✅, 8 | `UpdateOffersSectionRequest` + custom rule `MarkedText` (length without `**`, odd `**` refused) |
-| `checkBannerInput` | 7 | `StoreBannerRequest` / `UpdateBannerRequest` |
+| `checkBannerInput` | 7 ✅ | `SaveBannerRequest` (`POST` and `PUT`) |
 | `checkReviewInput`, `checkReviewsSettings` | 8 | Review requests + section request |
 | `checkHeroInput`, `checkAboutInput` | 9 | `UpdateHeroRequest`, `UpdateAboutRequest` |
 | `checkSiteInfoInput` | 10 | `UpdateSiteInfoRequest` + `SaveSiteInfo` action (409 rules) |
@@ -223,6 +229,9 @@ The limits (`PRODUCT_LIMITS`, `OFFER_LIMITS`, …) are constants in that file; c
 | 6.2 | Shape of `GET /admin/offers` and `/admin/reviews` | 6 | **Decided 2026-11-17: her `OffersContent` / `ReviewsContent`, flat** (section settings + every item; what her dashboard seed reads) · ~~a list + a separate `GET /admin/offers-section`~~ (one more request and endpoint, no gain) · ~~`{ section, offers }`~~ (not her type) |
 | 6.3 | Public `null` | 6 | **Decided 2026-11-17: `null` when the section is off or has no active (visible) item**, as her mock-mode `getOffersContent` / `getReviewsContent` |
 | 7.1 | Banner `href` in the public response | 7 | **Decided 2026-11-17: the stored `action.target`; the frontend builds the link** (routes are hers); the API leaves out a button whose target is gone · ~~backend resolves the link~~ |
+| 7.2 | Banner photo alt text | 7 | **Decided 2026-11-17: accept `image.alt` (≤ 120); missing → the title on one line** (what her form sends), so a photo never goes without one |
+| 7.3 | When is a banner target "gone" on the public site | 7 | **Decided 2026-11-17: not reachable, not only deleted:** a deleted or empty category, a deleted product, offers hidden. Her `bannerHref` checks the same on her side |
+| 7.4 | Public banners query cost | 7 | **Decided 2026-11-17: a fixed number of queries** (targets eager-loaded, categories with their product count), with a query-count test like `/menu` |
 | 11.1 | Public `GET /ordering` keys | 11 | **Decided 2026-11-17: her `OrderingOptions`** without `restaurantName` / `timeZone`: `{ delivery: { fee, whatsApp } \| null, dineInBranches: [{ id, name, tableCount, whatsApp }], message, thankYou }` |
 
 A decision that changes the API's behaviour also goes into `API-CONTRACT.md` (PR to the frontend repo).

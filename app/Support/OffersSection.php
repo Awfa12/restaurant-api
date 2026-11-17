@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\Offer;
 use App\Models\Setting;
 
 /**
@@ -22,6 +23,18 @@ class OffersSection
     {
         return Setting::where('key', self::KEY)->first()?->value
             ?? ['isEnabled' => false, 'eyebrow' => '', 'title' => ''];
+    }
+
+    /**
+     * Whether the public site shows the section: on, with at least one active
+     * offer. The same rule decides GET /offers' `null` and whether a banner
+     * button to the offers is kept.
+     *
+     * @param  array{isEnabled: bool}|null  $settings  already loaded settings (saves a query)
+     */
+    public static function isShown(?array $settings = null): bool
+    {
+        return ($settings ?? self::get())['isEnabled'] && Offer::query()->where('is_active', true)->exists();
     }
 
     /**

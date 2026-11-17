@@ -121,7 +121,23 @@ it('serves the mock offers from GET /offers: same section texts, offers, order a
         ->and($withoutImages($served['offers']))->toBe($withoutImages($activeMockOffers));
 
     foreach ([$served['menuCardImage'], ...array_column($served['offers'], 'image')] as $url) {
-        expect(Validator::make(['image' => $url], ['image' => [new OwnUploadUrl]])->passes())->toBeTrue();
+        expect(OwnUploadUrl::accepts($url))->toBeTrue();
+    }
+});
+
+it('serves the mock banners from GET /banners: same texts, alt, buttons and targets, in order, photos as our uploads', function () {
+    $this->seed();
+    // The mock's ids don't survive seeding (database ids), and photos become our uploads.
+    $comparable = fn (array $banners) => array_map(fn (array $banner) => Arr::except($banner, ['id', 'image.src']), $banners);
+    $activeMockBanners = array_values(array_filter(SeedData::read('banners'), fn (array $banner) => $banner['isActive']));
+
+    $response = $this->getJson('/api/v1/banners');
+
+    $response->assertOk();
+    expect($comparable($response->json()))->toBe($comparable($activeMockBanners));
+
+    foreach (array_column(array_column($response->json(), 'image'), 'src') as $url) {
+        expect(OwnUploadUrl::accepts($url))->toBeTrue();
     }
 });
 
