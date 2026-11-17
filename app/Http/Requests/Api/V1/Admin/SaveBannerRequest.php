@@ -3,9 +3,9 @@
 namespace App\Http\Requests\Api\V1\Admin;
 
 use App\Enums\BannerTargetKind;
+use App\Http\Requests\Api\V1\Admin\Concerns\ChecksContentImage;
 use App\Models\Category;
 use App\Models\Product;
-use App\Rules\OwnUploadUrl;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
@@ -16,6 +16,8 @@ use Illuminate\Validation\Validator;
  */
 class SaveBannerRequest extends FormRequest
 {
+    use ChecksContentImage;
+
     /** The frontend's BANNER_LIMITS (+ the photo's alt text column). */
     public const LIMITS = [
         'eyebrow' => 24,
@@ -99,7 +101,7 @@ class SaveBannerRequest extends FormRequest
                 $data = $validator->getData();
 
                 $this->checkTitle($validator, $data['title'] ?? null);
-                $this->checkImage($validator, $data['image']['src'] ?? null);
+                $this->checkContentImage($validator, $data['image']['src'] ?? null, self::IMAGE_REQUIRED);
 
                 if (is_array($data['action'] ?? null)) {
                     $this->checkAction($validator, $data['action']);
@@ -123,26 +125,6 @@ class SaveBannerRequest extends FormRequest
             $validator->errors()->add('title', 'العنوان سطرين بالكتير');
         } elseif (collect($lines)->contains(fn (string $line) => mb_strlen($line) > self::LIMITS['titleLine'])) {
             $validator->errors()->add('title', 'كل سطر '.self::LIMITS['titleLine'].' حرف أو أقل، لحتى يبيّن على الموبايل');
-        }
-    }
-
-    /**
-     * A photo is required, and it must be one of our uploads (error on `image`).
-     */
-    protected function checkImage(Validator $validator, mixed $src): void
-    {
-        if ($validator->errors()->has('image')) {
-            return;
-        }
-
-        if (blank($src)) {
-            $validator->errors()->add('image', self::IMAGE_REQUIRED);
-
-            return;
-        }
-
-        if (! OwnUploadUrl::accepts($src)) {
-            $validator->errors()->add('image', OwnUploadUrl::MESSAGE);
         }
     }
 

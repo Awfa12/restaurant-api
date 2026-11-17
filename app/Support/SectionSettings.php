@@ -9,7 +9,8 @@ use App\Models\Setting;
  * section (docs/DATABASE.md §3), read and saved whole. The seeder creates the
  * row on every server; a section never seeded counts as off.
  *
- * Each section names its key, its defaults and the fields a PATCH may change,
+ * Each section names its key, its defaults and the fields a PATCH may change
+ * (none for the hero and About, which are saved whole with replace()),
  * and can add its own handling (OffersSection's photo) in applyChanges().
  */
 abstract class SectionSettings
@@ -59,8 +60,17 @@ abstract class SectionSettings
             }
         }
 
-        $settings = static::applyChanges($settings, $changes);
+        return static::replace(static::applyChanges($settings, $changes));
+    }
 
+    /**
+     * Saves the whole row (PUT: hero, About), already in its stored shape.
+     *
+     * @param  array<string, mixed>  $settings
+     * @return array<string, mixed>
+     */
+    public static function replace(array $settings): array
+    {
         Setting::updateOrCreate(['key' => static::key()], ['value' => $settings]);
 
         return $settings;

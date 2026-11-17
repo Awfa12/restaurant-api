@@ -1,8 +1,11 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AboutController;
+use App\Http\Controllers\Api\V1\Admin\AboutController as AdminAboutController;
 use App\Http\Controllers\Api\V1\Admin\BannerController;
 use App\Http\Controllers\Api\V1\Admin\BestSellerController;
 use App\Http\Controllers\Api\V1\Admin\CategoryController;
+use App\Http\Controllers\Api\V1\Admin\HeroController as AdminHeroController;
 use App\Http\Controllers\Api\V1\Admin\OfferController;
 use App\Http\Controllers\Api\V1\Admin\OffersSectionController;
 use App\Http\Controllers\Api\V1\Admin\ProductController;
@@ -11,6 +14,7 @@ use App\Http\Controllers\Api\V1\Admin\ReviewsSectionController;
 use App\Http\Controllers\Api\V1\Admin\UploadController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BannersController;
+use App\Http\Controllers\Api\V1\HeroController;
 use App\Http\Controllers\Api\V1\MenuController;
 use App\Http\Controllers\Api\V1\OffersController;
 use App\Http\Controllers\Api\V1\ReviewsController;
@@ -34,6 +38,8 @@ Route::middleware('throttle:public')->group(function () {
     Route::get('offers', OffersController::class)->name('offers');
     Route::get('banners', BannersController::class)->name('banners');
     Route::get('reviews', ReviewsController::class)->name('reviews');
+    Route::get('hero', HeroController::class)->name('hero');
+    Route::get('about', AboutController::class)->name('about');
 });
 
 Route::prefix('auth')->name('auth.')->group(function () {
@@ -90,4 +96,10 @@ Route::prefix('admin')->name('admin.')->middleware('auth:sanctum')->group(functi
     Route::delete('reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
     Route::post('reviews/{review}/move', [ReviewController::class, 'move'])->name('reviews.move');
     Route::patch('reviews-section', ReviewsSectionController::class)->name('reviews-section.update');
+
+    // One whole record each (PUT).
+    Route::get('hero', [AdminHeroController::class, 'show'])->name('hero.show');
+    Route::put('hero', [AdminHeroController::class, 'update'])->name('hero.update');
+    Route::get('about', [AdminAboutController::class, 'show'])->name('about.show');
+    Route::put('about', [AdminAboutController::class, 'update'])->name('about.update');
 });

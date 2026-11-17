@@ -143,8 +143,8 @@ PR #15 (branch `feat/phase-7-banners`), on staging 2026-11-17. Frontend: banners
 
 **Done when:** the banner endpoints match the contract, with tests, and run on staging. ✅
 
-### Phase 8 — Reviews `IN PROGRESS` · size S
-Branch `feat/phase-8-reviews`: code and tests done; left: the PR, `staging` + `bash bin/deploy.sh`, then the frontend turns `reviews` on. Same shapes as offers (decisions 6.1–6.3, sent in the D7 contract answers). No migration: the table, the `reviews_section` row and the 4 seeded reviews exist since Phases 1 and 2.
+### Phase 8 — Reviews `DONE` · size S
+PR #16 (branch `feat/phase-8-reviews`), on staging 2026-11-17. Frontend: reviews live after the dashboard pass on the demo (her PR #55). Same shapes as offers (decisions 6.1–6.3, sent in the D7 contract answers). No migration: the table, the `reviews_section` row and the 4 seeded reviews exist since Phases 1 and 2.
 - ✅ **Public `GET /reviews`** (in `throttle:public`): her `ReviewsContent` flat, `{ isEnabled, eyebrow, title, defaultQuestion, reviews }`, visible reviews only, in order; a raw `null` when the section is off **or** has no visible review (as her `visibleReviewsOnly`).
 - ✅ **Admin:** `GET /admin/reviews` = the same flat shape with every review; `POST` (`201`, last); **`PUT /{id}` whole review** (a missing `question` / `time` is cleared); **`PATCH /{id}` = `isVisible` only** (`PatchIsVisibleRequest`); `DELETE` (`204`, renumbered); `POST /{id}/move` → every review. `PATCH /admin/reviews-section`: partial, returns her `ReviewsSettings`. Ids are database ids as strings; an empty `question` is left out (the site shows `defaultQuestion`).
 - ✅ **Validation** (§4): `checkReviewInput` → `SaveReviewRequest` (the answer through `MarkedText`: ≤ 220 without `**`, several marked parts, odd `**` refused); `checkReviewsSettings` → `UpdateReviewsSectionRequest` (eyebrow and title from `UpdateOffersSectionRequest::sectionTextRules()`, the rules both sections share).
@@ -152,13 +152,22 @@ Branch `feat/phase-8-reviews`: code and tests done; left: the PR, `staging` + `b
 - ✅ **Lengths:** her JS `.length` counts an emoji as 2, PHP `mb_strlen` as 1, so her limit is the stricter one: what her dashboard accepts we accept (no surprise `422`); kept as is (decision 8.1).
 - ✅ Tests: `ReviewsControllerTest`, `Admin/ReviewControllerTest`, `Admin/ReviewsSectionControllerTest`, `SeedDataTest` (seeded reviews through `GET /reviews` = her mock). The "no visible review" `null` checked by breaking the rule once. 322 tests.
 
-**Frontend can switch:** reviews (her D7f, already written): `API_AREAS` gets `reviews` once this is on staging.
+**Frontend can switch:** reviews. ✅ Switched (`API_AREAS=menu,offers,banners,reviews` on Vercel Production).
 
-**Done when:** the review endpoints match the contract, with tests, and run on staging.
+**Done when:** the review endpoints match the contract, with tests, and run on staging. ✅
 
-### Phase 9 — Hero + About `TODO` · size S
-- Public `GET /hero`, `GET /about`; admin `GET/PUT` for each (whole record).
-- Validation: `checkHeroInput` (exactly 3 features, known icons), `checkAboutInput` (1–4 paragraphs, highlights).
+### Phase 9 — Hero + About `IN PROGRESS` · size S
+Branch `feat/phase-9-home`: code and tests done; left: the PR, `staging` + `bash bin/deploy.sh`, then the frontend turns `home` on (hero and About together). Decisions 9.1–9.3 (2026-11-17, §6). No migration: the `hero` and `about` settings rows are seeded since Phase 2.
+- ✅ **Public `GET /hero`, `GET /about`** (in `throttle:public`): her `HeroContent` / `AboutContent` exactly (an empty `badge` left out, the About photo as a URL). Nothing is hidden, so the admin GETs return the same.
+- ✅ **Admin:** `GET` + **`PUT /admin/hero`** and **`PUT /admin/about`**: the whole record (a missing `badge` is cleared), stored through `SectionSettings::replace()` (`App\Support\HeroContent`, `AboutContent`).
+- ✅ **Validation** (§4): `checkHeroInput` → `UpdateHeroRequest` (exactly 3 features; each `features.<i>.label` ≤ 28 and `.icon` one of the new `App\Enums\FeatureIcon`); `checkAboutInput` → `UpdateAboutRequest` (eyebrow ≤ **40** and title through the shared section-text rules with About's limits and `partial: false`; 1–4 paragraphs, each ≤ 320 without `**` with its error on `paragraphs.<i>`, an empty one refused, not dropped; closing ≤ 120 with marks; the photo required and ours).
+- ✅ **Alt text** (decision 9.1): the sent `image.alt`, or the title without its markers (what her form sends for a new photo).
+- ✅ **Shared pieces:** `sectionTextRules($limits, $partial)` (2 options, `isEnabled` moved to the two section requests); the trait `Concerns\ChecksContentImage` (a `{ src, alt }` photo, error on `image`) now used by banners and About.
+- ✅ Tests: `HomeContentTest` (public), `Admin/HeroControllerTest`, `Admin/AboutControllerTest`, `SeedDataTest` (seeded hero and About through the public GETs = her mock). The "whole save needs every field" rule was first tested with `eyebrow: null`, which also passes with the partial rules (a present key still runs `required`); the test now leaves the key out, and fails when the rule is broken (checked). 363 tests.
+
+**Frontend can switch:** hero + About (her D7g, the `home` area): `API_AREAS` gets `home` once this is on staging.
+
+**Done when:** the hero and About endpoints match the contract, with tests, and run on staging.
 
 ### Phase 10 — Site info `TODO` · size M
 The trickiest rules.
@@ -201,7 +210,7 @@ The trickiest rules.
 | `checkSectionText` | 6 ✅, 8 ✅ | `UpdateOffersSectionRequest::sectionTextRules()` + custom rule `MarkedText` (length without `**`, odd `**` refused) |
 | `checkBannerInput` | 7 ✅ | `SaveBannerRequest` (`POST` and `PUT`) |
 | `checkReviewInput`, `checkReviewsSettings` | 8 ✅ | `SaveReviewRequest` (`POST` and `PUT`), `UpdateReviewsSectionRequest` |
-| `checkHeroInput`, `checkAboutInput` | 9 | `UpdateHeroRequest`, `UpdateAboutRequest` |
+| `checkHeroInput`, `checkAboutInput` | 9 ✅ | `UpdateHeroRequest`, `UpdateAboutRequest` |
 | `checkSiteInfoInput` | 10 | `UpdateSiteInfoRequest` + `SaveSiteInfo` action (409 rules) |
 | `checkOrderingInput` | 11 | `UpdateOrderingRequest` + `SaveOrdering` action |
 
@@ -241,6 +250,9 @@ The limits (`PRODUCT_LIMITS`, `OFFER_LIMITS`, …) are constants in that file; c
 | 7.3 | When is a banner target "gone" on the public site | 7 | **Decided 2026-11-17: not reachable, not only deleted:** a deleted or empty category, a deleted product, offers hidden. Her `bannerHref` checks the same on her side |
 | 7.4 | Public banners query cost | 7 | **Decided 2026-11-17: a fixed number of queries** (targets eager-loaded, categories with their product count), with a query-count test like `/menu` |
 | 8.1 | Text lengths with emoji | 8 | **Decided 2026-11-17: keep PHP's count** (`mb_strlen`: an emoji is 1; her `.length`: 2). Her limit is the stricter one, so nothing her dashboard accepts is refused here · ~~count UTF-16 units like JS~~ (extra code, no visible gain) |
+| 9.1 | About photo alt text | 9 | **Decided 2026-11-17: the sent `image.alt`; missing → the title without its markers** (what her form sends for a new photo; same idea as 7.2) |
+| 9.2 | Section-text rules for About | 9 | **Decided 2026-11-17: one `sectionTextRules($limits, $partial)`** for offers, reviews and About (About: eyebrow 40, and `required` for a whole save, not `sometimes`) · ~~a copy in the About request~~ |
+| 9.3 | Where the hero and About rows live | 9 | **Decided 2026-11-17: the `SectionSettings` base**, with a new `replace()` for a whole save · ~~a second settings helper~~ |
 | 11.1 | Public `GET /ordering` keys | 11 | **Decided 2026-11-17: her `OrderingOptions`** without `restaurantName` / `timeZone`: `{ delivery: { fee, whatsApp } \| null, dineInBranches: [{ id, name, tableCount, whatsApp }], message, thankYou }` |
 
 A decision that changes the API's behaviour also goes into `API-CONTRACT.md` (PR to the frontend repo).
