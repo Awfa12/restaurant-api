@@ -3,27 +3,14 @@
 namespace App\Support;
 
 use App\Models\Offer;
-use App\Models\Setting;
 
 /**
- * The offers section's settings: one `settings` row, key `offers_section`
- * (docs/DATABASE.md §3), stored as { isEnabled, eyebrow, title,
- * menuCardImagePath? }. The seeder creates it on every server.
+ * The offers section's settings: key `offers_section`, stored as
+ * { isEnabled, eyebrow, title, menuCardImagePath? } (photos as paths).
  */
-class OffersSection
+class OffersSection extends SectionSettings
 {
     public const KEY = 'offers_section';
-
-    /**
-     * The stored settings; a section that was never seeded counts as off.
-     *
-     * @return array{isEnabled: bool, eyebrow: string, title: string, menuCardImagePath?: string}
-     */
-    public static function get(): array
-    {
-        return Setting::where('key', self::KEY)->first()?->value
-            ?? ['isEnabled' => false, 'eyebrow' => '', 'title' => ''];
-    }
 
     /**
      * Whether the public site shows the section: on, with at least one active
@@ -37,23 +24,26 @@ class OffersSection
         return ($settings ?? self::get())['isEnabled'] && Offer::query()->where('is_active', true)->exists();
     }
 
-    /**
-     * Saves the fields that were sent (PATCH: a missing field doesn't change).
-     * `menuCardImage` is a URL from the request: null removes the photo.
-     *
-     * @param  array{isEnabled?: bool, eyebrow?: string, title?: string, menuCardImage?: ?string}  $changes
-     * @return array{isEnabled: bool, eyebrow: string, title: string, menuCardImagePath?: string}
-     */
-    public static function update(array $changes): array
+    protected static function key(): string
     {
-        $settings = self::get();
+        return self::KEY;
+    }
 
-        foreach (['isEnabled', 'eyebrow', 'title'] as $field) {
-            if (array_key_exists($field, $changes)) {
-                $settings[$field] = $changes[$field];
-            }
-        }
+    protected static function defaults(): array
+    {
+        return ['isEnabled' => false, 'eyebrow' => '', 'title' => ''];
+    }
 
+    protected static function fields(): array
+    {
+        return ['isEnabled', 'eyebrow', 'title'];
+    }
+
+    /**
+     * `menuCardImage` is a URL from the request, stored as a path; null removes the photo.
+     */
+    protected static function applyChanges(array $settings, array $changes): array
+    {
         if (array_key_exists('menuCardImage', $changes)) {
             unset($settings['menuCardImagePath']);
 
@@ -61,8 +51,6 @@ class OffersSection
                 $settings['menuCardImagePath'] = PublicImage::pathFromUrl($changes['menuCardImage']);
             }
         }
-
-        Setting::updateOrCreate(['key' => self::KEY], ['value' => $settings]);
 
         return $settings;
     }

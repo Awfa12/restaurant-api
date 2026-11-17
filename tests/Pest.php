@@ -60,3 +60,22 @@ function storeOffersSection(array $overrides = []): array
 
     return $value;
 }
+
+/**
+ * Stores the reviews section's settings, as the seeder does (docs/DATABASE.md §3).
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function storeReviewsSection(array $overrides = []): array
+{
+    $value = array_merge([
+        'isEnabled' => true,
+        'eyebrow' => 'وصلتنا على واتساب',
+        'title' => 'شو قالوا **عنّا**',
+        'defaultQuestion' => 'كيف كانت تجربتك معنا اليوم؟',
+    ], $overrides);
+    Setting::updateOrCreate(['key' => 'reviews_section'], ['value' => $value]);
+
+    return $value;
+}
