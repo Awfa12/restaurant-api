@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\Admin\CategoryController;
 use App\Http\Controllers\Api\V1\Admin\HeroController as AdminHeroController;
 use App\Http\Controllers\Api\V1\Admin\OfferController;
 use App\Http\Controllers\Api\V1\Admin\OffersSectionController;
+use App\Http\Controllers\Api\V1\Admin\OrderingController as AdminOrderingController;
 use App\Http\Controllers\Api\V1\Admin\ProductController;
 use App\Http\Controllers\Api\V1\Admin\ReviewController;
 use App\Http\Controllers\Api\V1\Admin\ReviewsSectionController;
@@ -18,6 +19,7 @@ use App\Http\Controllers\Api\V1\BannersController;
 use App\Http\Controllers\Api\V1\HeroController;
 use App\Http\Controllers\Api\V1\MenuController;
 use App\Http\Controllers\Api\V1\OffersController;
+use App\Http\Controllers\Api\V1\OrderingController;
 use App\Http\Controllers\Api\V1\ReviewsController;
 use App\Http\Controllers\Api\V1\SiteInfoController;
 use Illuminate\Support\Facades\Route;
@@ -43,6 +45,7 @@ Route::middleware('throttle:public')->group(function () {
     Route::get('hero', HeroController::class)->name('hero');
     Route::get('about', AboutController::class)->name('about');
     Route::get('site-info', SiteInfoController::class)->name('site-info');
+    Route::get('ordering', OrderingController::class)->name('ordering');
 });
 
 Route::prefix('auth')->name('auth.')->group(function () {
@@ -109,4 +112,8 @@ Route::prefix('admin')->name('admin.')->middleware('auth:sanctum')->group(functi
     // Phones and branches saved by id inside the whole record (API-CONTRACT §4.1).
     Route::get('site-info', [AdminSiteInfoController::class, 'show'])->name('site-info.show');
     Route::put('site-info', [AdminSiteInfoController::class, 'update'])->name('site-info.update');
+
+    // Checked against the saved site info (what's on needs a WhatsApp number).
+    Route::get('ordering', [AdminOrderingController::class, 'show'])->name('ordering.show');
+    Route::put('ordering', [AdminOrderingController::class, 'update'])->name('ordering.update');
 });

@@ -165,6 +165,33 @@ it('serves the mock site info from GET /site-info: same texts, branches and publ
         ->and(array_map(fn (array $phone) => Arr::except($phone, 'id'), $served['phones']))->toBe($publicMockPhones);
 });
 
+it('serves GET /ordering as her mockOrdering() works it out from the mock site info and ordering', function () {
+    $this->seed();
+    $siteInfo = SeedData::read('site-info');
+    $ordering = SeedData::read('ordering');
+    $phones = collect($siteInfo['phones']);
+    // Her rules: delivery to its phone with WhatsApp; each branch on, with tables, to its first WhatsApp staff phone.
+    $deliveryPhone = $phones->first(fn (array $phone) => $phone['id'] === $ordering['delivery']['phoneId'] && $phone['hasWhatsApp']);
+    $expectedBranches = collect($ordering['dineIn']['branches'])
+        ->filter(fn (array $setting) => $setting['isEnabled'] && $setting['tableCount'] > 0)
+        ->map(function (array $setting) use ($siteInfo, $phones) {
+            $branch = collect($siteInfo['branches'])->firstWhere('id', $setting['branchId']);
+            $phone = $phones->first(fn (array $phone) => ($phone['branchId'] ?? null) === $branch['id'] && $phone['hasWhatsApp']);
+
+            return $phone ? ['id' => $branch['id'], 'name' => $branch['name'], 'tableCount' => $setting['tableCount'], 'whatsApp' => $phone['number']] : null;
+        })
+        ->filter()
+        ->values()
+        ->all();
+
+    $this->getJson('/api/v1/ordering')->assertOk()->assertExactJson([
+        'delivery' => $ordering['delivery']['isEnabled'] && $deliveryPhone ? ['fee' => $ordering['delivery']['fee'], 'whatsApp' => $deliveryPhone['number']] : null,
+        'dineInBranches' => $ordering['dineIn']['isEnabled'] ? $expectedBranches : [],
+        'message' => $ordering['message'],
+        'thankYou' => $ordering['thankYou'],
+    ]);
+});
+
 it('serves the mock banners from GET /banners: same texts, alt, buttons and targets, in order, photos as our uploads', function () {
     $this->seed();
     // The mock's ids don't survive seeding (database ids), and photos become our uploads.

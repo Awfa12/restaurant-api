@@ -27,6 +27,22 @@ class OrderingSetting extends Model
     use HasFactory;
 
     /**
+     * The one row (the seeder creates it); before that, everything off and
+     * empty texts, never saved by reading.
+     */
+    public static function current(): self
+    {
+        return self::query()->first() ?? new self([
+            'delivery_enabled' => false,
+            'delivery_fee' => 0,
+            'dine_in_enabled' => false,
+            'greeting' => '',
+            'closing' => '',
+            'thank_you' => '',
+        ]);
+    }
+
+    /**
      * The restaurant phone that receives delivery orders.
      *
      * @return BelongsTo<Phone, $this>

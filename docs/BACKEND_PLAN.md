@@ -170,7 +170,7 @@ PR #17 (branch `feat/phase-9-home`), on staging 2026-11-17. Frontend: hero and A
 **Done when:** the hero and About endpoints match the contract, with tests, and run on staging. ✅
 
 ### Phase 10 — Site info `IN PROGRESS` · size M
-Branch `feat/phase-10-site-info`: code and tests done; left: the PR, then Phase 11, then **both** on staging before the frontend turns `info` and `ordering` on together (her `API_AREAS` refuses one without the other). Decisions 10.1–10.3 (2026-11-17, §6). No migration.
+PR #18 (branch `feat/phase-10-site-info`), merged; goes to staging **with Phase 11**, then the frontend turns `info` and `ordering` on together (her `API_AREAS` refuses one without the other). Decisions 10.1–10.3 (2026-11-17, §6). No migration.
 - ✅ **Public `GET /site-info`** (in `throttle:public`): her `SiteInfo` with **the branch staff phones left out** (tested: their numbers never appear in the body). Phones and branches in their saved order, branch ids = slugs. **3 queries** (tested).
 - ✅ **Admin:** `GET /admin/site-info` = everything, a staff phone with its `branchId` (slug); **`PUT /admin/site-info`** = the whole record in one transaction (`App\Actions\SaveSiteInfo`):
   - **saved by id** (§4.1): sent with an id → updated, `id: ""` → created, missing → deleted; order = the order sent (it decides the branch phone that gets table orders);
@@ -183,12 +183,16 @@ Branch `feat/phase-10-site-info`: code and tests done; left: the PR, then Phase 
 
 **Done when:** the site-info endpoints match the contract, with tests, and run on staging (with Phase 11).
 
-### Phase 11 — Ordering settings `TODO` · size M
-- Public `GET /ordering`: only enabled types and branches, with the WhatsApp numbers resolved.
-- Admin `GET/PUT /admin/ordering`: checked against the saved site info (what's on needs a WhatsApp number; tables on → at least one branch on; `tableCount` 0–99, and ≥ 1 when that branch is on: API-CONTRACT §4).
-- Validation: `checkOrderingInput` (only `{restaurant}` / `{name}` placeholders).
+### Phase 11 — Ordering settings `IN PROGRESS` · size M
+Branch `feat/phase-11-ordering`: code and tests done; left: the PR, then `staging` + `bash bin/deploy.sh` once for Phases 10 and 11, then the frontend turns `info` and `ordering` on together. Decisions 11.1–11.3 (2026-11-17, §6). No migration: the `ordering_settings` row and the branch table columns are seeded since Phase 2.
+- ✅ **Public `GET /ordering`** (in `throttle:public`): her `OrderingOptions` without `restaurantName` / `timeZone` (decision 11.1): `delivery: { fee, whatsApp }` or **`null`** (off, or its phone has no WhatsApp; the key is always there); `dineInBranches`: only while table orders are on, each branch on with ≥ 1 table and its **first WhatsApp staff phone in list order** (a branch without one is left out); `message`, `thankYou`. **4 queries** (tested).
+- ✅ **Admin:** `GET /admin/ordering` = her `OrderingSettings`, `dineIn.branches` for **every** branch (also never set up: off, 0 tables), a delivery phone gone → `phoneId: ""`; **`PUT /admin/ordering`** = the whole settings in one transaction (`App\Actions\SaveOrdering`), touching only the ordering row and the branches' two table columns (tested: names, addresses and phones untouched). A branch left out is switched off, its count kept (11.2); the delivery phone is kept while delivery is off only if it's a restaurant phone (11.3).
+- ✅ **Validation** (§4): `checkOrderingInput` → `UpdateOrderingRequest`, against the **saved** site info: fee 0–10,000,000; delivery on → a restaurant phone with WhatsApp; each branch saved and listed once; tables 0–99, ≥ 1 when on; a branch on needs a WhatsApp staff phone (`dineIn.branches.<i>.isEnabled`); table orders on → a branch on; greeting ≤ 120 and thank-you ≤ 240 required, closing ≤ 200; only `{restaurant}` / `{name}`.
+- ✅ Tests: `OrderingControllerTest` (public), `Admin/OrderingControllerTest` (round trip; whole save; 18 validation cases), `SeedDataTest` (seeded `GET /ordering` = what her `mockOrdering()` works out from the mock files). The delivery-phone check, the branch WhatsApp check and the public WhatsApp filter each checked by breaking them once. 457 tests.
 
-**After Phase 11:** every area of the frontend can run on the API.
+**Frontend can switch:** site info and ordering together (her D7h + D7i): `API_AREAS` gets `info,ordering` once both are on staging.
+
+**Done when:** the ordering endpoints match the contract, with tests, and run on staging. **After Phase 11:** every area of the frontend runs on the API (milestone M3); the browser draft and the mock data are no longer used on the showcase.
 
 ### Phase 12 — Production launch `TODO` · size M
 - Only once the owner buys. **Its own hosting account** (the demo shares an account with another site, accepted for the demo only); [DEPLOYMENT.md](DEPLOYMENT.md) §9 lists what changes.
@@ -203,7 +207,7 @@ Branch `feat/phase-10-site-info`: code and tests done; left: the PR, then Phase 
 | Milestone | After phase | The frontend can |
 |---|---|---|
 | M1: staging + login + menu ✅ 2026-11-12 | 5 | Build `apiFetch`, switch login and the whole menu area (her D7a–D7c, PRs #44–#46) |
-| M2: content | 6–9 | Switch offers, banners, reviews, hero, about |
+| M2: content ✅ 2026-11-17 | 6–9 | Switch offers, banners, reviews, hero, about (her PRs #53–#56) |
 | M3: restaurant settings | 10–11 | Switch site info and ordering; remove mock data and the browser draft |
 | M4: launch | 12 | Go live on the domain, print QR codes |
 
@@ -220,7 +224,7 @@ Branch `feat/phase-10-site-info`: code and tests done; left: the PR, then Phase 
 | `checkReviewInput`, `checkReviewsSettings` | 8 ✅ | `SaveReviewRequest` (`POST` and `PUT`), `UpdateReviewsSectionRequest` |
 | `checkHeroInput`, `checkAboutInput` | 9 ✅ | `UpdateHeroRequest`, `UpdateAboutRequest` |
 | `checkSiteInfoInput` | 10 ✅ | `UpdateSiteInfoRequest` + `SaveSiteInfo` action (409 rules) |
-| `checkOrderingInput` | 11 | `UpdateOrderingRequest` + `SaveOrdering` action |
+| `checkOrderingInput` | 11 ✅ | `UpdateOrderingRequest` + `SaveOrdering` action |
 
 The limits (`PRODUCT_LIMITS`, `OFFER_LIMITS`, …) are constants in that file; copy the numbers, keep the Arabic texts word for word, and use the field keys from API-CONTRACT §4.
 
