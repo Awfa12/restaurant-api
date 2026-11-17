@@ -28,6 +28,7 @@ class UpdateReviewsSectionRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'isEnabled' => ['sometimes', 'required', 'boolean'],
             ...UpdateOffersSectionRequest::sectionTextRules(),
             'defaultQuestion' => ['sometimes', 'required', 'string', 'max:'.SaveReviewRequest::LIMITS['question']],
         ];

@@ -139,6 +139,17 @@ it('serves the mock reviews from GET /reviews: same section texts, names, answer
         ->and($withoutIds($response->json('reviews')))->toBe($withoutIds($visibleMockReviews));
 });
 
+it('serves the mock hero and «من نحن» from GET /hero and GET /about, the About photo as our upload', function () {
+    $this->seed();
+    $about = SeedData::read('about');
+
+    $this->getJson('/api/v1/hero')->assertOk()->assertExactJson(SeedData::read('hero'));
+
+    $served = $this->getJson('/api/v1/about')->assertOk()->json();
+    expect(Arr::except($served, 'image.src'))->toBe(Arr::except($about, 'image.src'))
+        ->and(OwnUploadUrl::accepts($served['image']['src']))->toBeTrue();
+});
+
 it('serves the mock banners from GET /banners: same texts, alt, buttons and targets, in order, photos as our uploads', function () {
     $this->seed();
     // The mock's ids don't survive seeding (database ids), and photos become our uploads.

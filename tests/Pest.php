@@ -62,6 +62,52 @@ function storeOffersSection(array $overrides = []): array
 }
 
 /**
+ * Stores the hero's texts, as the seeder does (docs/DATABASE.md §3).
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function storeHero(array $overrides = []): array
+{
+    $value = array_merge([
+        'badge' => 'من قلب السويداء',
+        'headline' => 'شاورما بطعم أصيل',
+        'primaryActionLabel' => 'اطلب الآن',
+        'secondaryActionLabel' => 'من نحن',
+        'features' => [
+            ['label' => 'مكونات طازجة يوميًا', 'icon' => 'fresh'],
+            ['label' => 'على الطريقة الشرقية الأصيلة', 'icon' => 'fire'],
+            ['label' => 'جودة عالية وسر المذاق', 'icon' => 'quality'],
+        ],
+    ], $overrides);
+    Setting::updateOrCreate(['key' => 'hero'], ['value' => $value]);
+
+    return $value;
+}
+
+/**
+ * Stores «من نحن», as the seeder does (the photo as a path).
+ *
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function storeAbout(array $overrides = []): array
+{
+    $value = array_merge([
+        'eyebrow' => 'من قلب الخبرة... إلى قلب المذاق',
+        'title' => 'أهل الكرم... **اسم على مسمّى**',
+        'paragraphs' => ['في أهل الكرم، الشاورما مو مجرد **وجبة**.', 'منختار مكوناتنا بعناية.'],
+        'closing' => 'والكرم عنا مو مجرد اسم.',
+        'imagePath' => 'uploads/about.webp',
+        'imageAlt' => 'شيف أهل الكرم',
+        'badge' => 'من قلب السويداء',
+    ], $overrides);
+    Setting::updateOrCreate(['key' => 'about'], ['value' => $value]);
+
+    return $value;
+}
+
+/**
  * Stores the reviews section's settings, as the seeder does (docs/DATABASE.md §3).
  *
  * @param  array<string, mixed>  $overrides
