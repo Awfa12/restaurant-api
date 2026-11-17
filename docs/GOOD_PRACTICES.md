@@ -75,6 +75,7 @@
 | Responses take the frontend's own TypeScript type when the contract leaves a shape open (`OffersContent` for `GET /admin/offers`, `OrderingOptions` for `GET /ordering`) | The rule is "exactly the frontend types"; her reader then needs one shape, not several guesses | decisions 6.2, 11.1 | 2026-11-17 |
 | A "nothing to show" public read sends a JSON `null` body, built raw | `response()->json(null)` sends `{}`, which her reader refuses as a broken section; tested on the body text and checked by swapping the line once | `OffersController`; `OffersControllerTest` | 2026-11-17 |
 | One home for each rule that two endpoints share: `OffersSection::isShown()` (the offers' `null` and banner buttons to them), `OwnUploadUrl::accepts()` (an image check reported on another key), `PatchIsActiveRequest` (offers and banners) | Two copies of a rule drift: the site would show a banner button to offers that `/offers` hides | `app/Support/OffersSection.php`, `app/Rules/OwnUploadUrl.php` | 2026-11-17 |
+| A home section's settings row goes through one base class (`SectionSettings`: key, defaults, PATCH fields, an `applyChanges()` hook), and its eyebrow/title rules through one method (`sectionTextRules()`) | Offers and reviews (and About next) read, patch and validate their rows the same way; a fix lands once. Extracted when the second section arrived, not before; the offers tests guarded the move | `app/Support/SectionSettings.php`, `UpdateOffersSectionRequest::sectionTextRules()` | 2026-11-17 |
 | A public banner button is kept only if its target is reachable on the site (not only "not deleted") | A button to an empty category would scroll to nothing; her `bannerHref` checks the same, so the two sides agree (decision 7.3) | `BannerResource::targetIsReachable()` | 2026-11-17 |
 | Copy with `**marked**` parts is checked by one rule (length without the markers, odd `**` refused) | Same rule for the offers, reviews and About texts, ported once from her `checkSectionText` | `App\Rules\MarkedText` | 2026-11-17 |
 
@@ -134,6 +135,7 @@
 | Practice | Why not (for now) |
 |---|---|
 | `laravel-lang` package for Arabic validation texts | A dependency for texts we mostly override per field (decision 0.2) |
+| Counting text lengths in UTF-16 units like the frontend's `.length` | An emoji is 2 for her and 1 for `mb_strlen`, so her limit is already the stricter one: nothing her dashboard accepts is refused here. Matching her would be extra code for no visible gain (decision 8.1) |
 | Unique indexes on `position` columns | A move would need a temporary-value swap; the actions keep 1…n in a transaction and tests check it (decision 1.3) |
 | Admin account from `ADMIN_USERNAME` / `ADMIN_PASSWORD` env vars in a seeder | Leaves the password in plain text in the server's `.env` (decision 2.1 → `admin:create`) |
 | Trusting `X-Forwarded-For` (or Vercel as a trusted proxy) for the login IP | Vercel's outgoing IPs aren't fixed, and a public API can't tell a real proxy from an attacker (decision 3.3 → shared-secret header) |

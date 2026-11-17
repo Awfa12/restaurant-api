@@ -131,22 +131,30 @@ PR #14 (branch `feat/phase-6-offers`), on staging 2026-11-17. Frontend: contract
 
 **Done when:** the offers endpoints match the contract answers, with tests, and run on staging. ✅
 
-### Phase 7 — Menu banners `IN PROGRESS` · size M
-Branch `feat/phase-7-banners`: code and tests done; left: the PR, `staging` + `bash bin/deploy.sh`, then the frontend turns `banners` on. Decisions 7.1–7.4 (2026-11-17, §6). No migration: the table, its target keys (null on delete) and the seed exist since Phases 1 and 2.
+### Phase 7 — Menu banners `DONE` · size M
+PR #15 (branch `feat/phase-7-banners`), on staging 2026-11-17. Frontend: banners live after the dashboard pass on the demo (her PR #54). Decisions 7.1–7.4 (2026-11-17, §6). No migration: the table, its target keys (null on delete) and the seed exist since Phases 1 and 2.
 - ✅ **Public `GET /banners`** (in `throttle:public`): her `MenuBanner[]`, active slides in order, `action.target` as stored (decision 7.1). A button that leads nowhere is **left out, the slide stays** (decision 7.3): a deleted category or product, a category with no products (not on the public menu), offers hidden (`OffersSection::isShown()`, the same rule as `GET /offers`' `null`). An unavailable product keeps its button (the menu still shows it). **5 queries whatever the number of slides** (tested with `expectsDatabaseQueryCount`).
 - ✅ **Admin:** `GET /admin/banners` = every slide, a deleted target sent with an empty id (`productId: ""`) so the dashboard shows "target gone"; `POST` (`201`, last); **`PUT /{id}` whole slide** (a missing eyebrow or button is cleared); **`PATCH /{id}` = `isActive` only**; `DELETE` (`204`, renumbered); `POST /{id}/move` → every slide. Ids are the database id as a string.
 - ✅ **Validation** (§4): `checkBannerInput` → `SaveBannerRequest`, errors on the contract's keys (`image`, not `image.src`; `action.label`, `action.target`). Title line breaks normalized to `\n` (two lines × 22). A gone target (`""`) is refused like an unknown one. `image.alt` ≤ 120, falls back to the title on one line (decision 7.2). One new text beyond hers: «اختار وين بياخد الزر» for an unknown target kind (her form can't send one).
 - ✅ **Shared pieces:** `PatchIsActiveRequest` (was `PatchOfferRequest`, now offers and banners), `OwnUploadUrl::accepts()` (the image check reported on another key), `OffersSection::isShown()`.
 - ✅ Tests: `BannersControllerTest`, `Admin/BannerControllerTest`, `SeedDataTest` (seeded banners through `GET /banners` = her mock). **Found and fixed:** `OwnUploadUrlTest`'s "refuses" dataset passed a closure instead of a URL (Pest passes a `Closure`-typed dataset value uncalled), so it passed whatever the rule did; now it fails when the rule is broken (checked). 287 tests.
 
-**Frontend can switch:** banners (her D7e, already written): `API_AREAS` gets `banners` once this is on staging.
+**Frontend can switch:** banners. ✅ Switched (`API_AREAS=menu,offers,banners` on Vercel Production).
 
-**Done when:** the banner endpoints match the contract, with tests, and run on staging.
+**Done when:** the banner endpoints match the contract, with tests, and run on staging. ✅
 
-### Phase 8 — Reviews `TODO` · size S
-- Public `GET /reviews` (section + visible reviews, `null` when off).
-- Admin: CRUD, shown/hidden, move; `PATCH /admin/reviews-section`.
-- Validation: `checkReviewInput`, `checkReviewsSettings`.
+### Phase 8 — Reviews `IN PROGRESS` · size S
+Branch `feat/phase-8-reviews`: code and tests done; left: the PR, `staging` + `bash bin/deploy.sh`, then the frontend turns `reviews` on. Same shapes as offers (decisions 6.1–6.3, sent in the D7 contract answers). No migration: the table, the `reviews_section` row and the 4 seeded reviews exist since Phases 1 and 2.
+- ✅ **Public `GET /reviews`** (in `throttle:public`): her `ReviewsContent` flat, `{ isEnabled, eyebrow, title, defaultQuestion, reviews }`, visible reviews only, in order; a raw `null` when the section is off **or** has no visible review (as her `visibleReviewsOnly`).
+- ✅ **Admin:** `GET /admin/reviews` = the same flat shape with every review; `POST` (`201`, last); **`PUT /{id}` whole review** (a missing `question` / `time` is cleared); **`PATCH /{id}` = `isVisible` only** (`PatchIsVisibleRequest`); `DELETE` (`204`, renumbered); `POST /{id}/move` → every review. `PATCH /admin/reviews-section`: partial, returns her `ReviewsSettings`. Ids are database ids as strings; an empty `question` is left out (the site shows `defaultQuestion`).
+- ✅ **Validation** (§4): `checkReviewInput` → `SaveReviewRequest` (the answer through `MarkedText`: ≤ 220 without `**`, several marked parts, odd `**` refused); `checkReviewsSettings` → `UpdateReviewsSectionRequest` (eyebrow and title from `UpdateOffersSectionRequest::sectionTextRules()`, the rules both sections share).
+- ✅ **Shared settings rows:** `App\Support\SectionSettings` (abstract: key, defaults, PATCH fields, `applyChanges()` hook), extended by `OffersSection` (its photo) and `ReviewsSection`. The offers tests guard the refactor.
+- ✅ **Lengths:** her JS `.length` counts an emoji as 2, PHP `mb_strlen` as 1, so her limit is the stricter one: what her dashboard accepts we accept (no surprise `422`); kept as is (decision 8.1).
+- ✅ Tests: `ReviewsControllerTest`, `Admin/ReviewControllerTest`, `Admin/ReviewsSectionControllerTest`, `SeedDataTest` (seeded reviews through `GET /reviews` = her mock). The "no visible review" `null` checked by breaking the rule once. 322 tests.
+
+**Frontend can switch:** reviews (her D7f, already written): `API_AREAS` gets `reviews` once this is on staging.
+
+**Done when:** the review endpoints match the contract, with tests, and run on staging.
 
 ### Phase 9 — Hero + About `TODO` · size S
 - Public `GET /hero`, `GET /about`; admin `GET/PUT` for each (whole record).
@@ -190,9 +198,9 @@ The trickiest rules.
 | `checkProductInput`, `validatePrice`, `parsePriceInput` limits | 4c | `SaveProductRequest` (`POST` and `PUT`) |
 | `checkProductQuickChanges` | 4c | `PatchProductRequest` |
 | `checkOfferInput` | 6 ✅ | `SaveOfferRequest` (`POST` and `PUT`) |
-| `checkSectionText` | 6 ✅, 8 | `UpdateOffersSectionRequest` + custom rule `MarkedText` (length without `**`, odd `**` refused) |
+| `checkSectionText` | 6 ✅, 8 ✅ | `UpdateOffersSectionRequest::sectionTextRules()` + custom rule `MarkedText` (length without `**`, odd `**` refused) |
 | `checkBannerInput` | 7 ✅ | `SaveBannerRequest` (`POST` and `PUT`) |
-| `checkReviewInput`, `checkReviewsSettings` | 8 | Review requests + section request |
+| `checkReviewInput`, `checkReviewsSettings` | 8 ✅ | `SaveReviewRequest` (`POST` and `PUT`), `UpdateReviewsSectionRequest` |
 | `checkHeroInput`, `checkAboutInput` | 9 | `UpdateHeroRequest`, `UpdateAboutRequest` |
 | `checkSiteInfoInput` | 10 | `UpdateSiteInfoRequest` + `SaveSiteInfo` action (409 rules) |
 | `checkOrderingInput` | 11 | `UpdateOrderingRequest` + `SaveOrdering` action |
@@ -232,6 +240,7 @@ The limits (`PRODUCT_LIMITS`, `OFFER_LIMITS`, …) are constants in that file; c
 | 7.2 | Banner photo alt text | 7 | **Decided 2026-11-17: accept `image.alt` (≤ 120); missing → the title on one line** (what her form sends), so a photo never goes without one |
 | 7.3 | When is a banner target "gone" on the public site | 7 | **Decided 2026-11-17: not reachable, not only deleted:** a deleted or empty category, a deleted product, offers hidden. Her `bannerHref` checks the same on her side |
 | 7.4 | Public banners query cost | 7 | **Decided 2026-11-17: a fixed number of queries** (targets eager-loaded, categories with their product count), with a query-count test like `/menu` |
+| 8.1 | Text lengths with emoji | 8 | **Decided 2026-11-17: keep PHP's count** (`mb_strlen`: an emoji is 1; her `.length`: 2). Her limit is the stricter one, so nothing her dashboard accepts is refused here · ~~count UTF-16 units like JS~~ (extra code, no visible gain) |
 | 11.1 | Public `GET /ordering` keys | 11 | **Decided 2026-11-17: her `OrderingOptions`** without `restaurantName` / `timeZone`: `{ delivery: { fee, whatsApp } \| null, dineInBranches: [{ id, name, tableCount, whatsApp }], message, thankYou }` |
 
 A decision that changes the API's behaviour also goes into `API-CONTRACT.md` (PR to the frontend repo).

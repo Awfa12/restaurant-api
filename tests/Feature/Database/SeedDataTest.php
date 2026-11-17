@@ -125,6 +125,20 @@ it('serves the mock offers from GET /offers: same section texts, offers, order a
     }
 });
 
+it('serves the mock reviews from GET /reviews: same section texts, names, answers, times and order', function () {
+    $this->seed();
+    $mock = SeedData::read('reviews');
+    // The mock's ids don't survive seeding (database ids).
+    $withoutIds = fn (array $reviews) => array_map(fn (array $review) => Arr::except($review, 'id'), $reviews);
+    $visibleMockReviews = array_values(array_filter($mock['reviews'], fn (array $review) => $review['isVisible']));
+
+    $response = $this->getJson('/api/v1/reviews');
+
+    $response->assertOk();
+    expect(Arr::except($response->json(), 'reviews'))->toBe(Arr::except($mock, 'reviews'))
+        ->and($withoutIds($response->json('reviews')))->toBe($withoutIds($visibleMockReviews));
+});
+
 it('serves the mock banners from GET /banners: same texts, alt, buttons and targets, in order, photos as our uploads', function () {
     $this->seed();
     // The mock's ids don't survive seeding (database ids), and photos become our uploads.

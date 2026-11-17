@@ -35,13 +35,7 @@ class UpdateOffersSectionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'isEnabled' => ['sometimes', 'required', 'boolean'],
-            'eyebrow' => ['sometimes', 'required', 'string', 'max:'.self::LIMITS['eyebrow']],
-            'title' => ['sometimes', 'required', 'string', new MarkedText(
-                self::LIMITS['title'],
-                'العنوان لازم يكون '.self::LIMITS['title'].' حرف أو أقل',
-                emptyMessage: 'اكتب العنوان',
-            )],
+            ...self::sectionTextRules(),
             'menuCardImage' => ['sometimes', 'nullable', new OwnUploadUrl],
         ];
     }
@@ -52,6 +46,35 @@ class UpdateOffersSectionRequest extends FormRequest
      * @return array<string, string>
      */
     public function messages(): array
+    {
+        return self::sectionTextMessages();
+    }
+
+    /**
+     * The switch, eyebrow and title of a home section (frontend checkSectionText):
+     * shared by the offers and reviews sections (and later About).
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    public static function sectionTextRules(): array
+    {
+        return [
+            'isEnabled' => ['sometimes', 'required', 'boolean'],
+            'eyebrow' => ['sometimes', 'required', 'string', 'max:'.self::LIMITS['eyebrow']],
+            'title' => ['sometimes', 'required', 'string', new MarkedText(
+                self::LIMITS['title'],
+                'العنوان لازم يكون '.self::LIMITS['title'].' حرف أو أقل',
+                emptyMessage: 'اكتب العنوان',
+            )],
+        ];
+    }
+
+    /**
+     * The Arabic texts for sectionTextRules().
+     *
+     * @return array<string, string>
+     */
+    public static function sectionTextMessages(): array
     {
         return [
             'eyebrow.required' => 'اكتب العنوان الصغير',

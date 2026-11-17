@@ -6,11 +6,14 @@ use App\Http\Controllers\Api\V1\Admin\CategoryController;
 use App\Http\Controllers\Api\V1\Admin\OfferController;
 use App\Http\Controllers\Api\V1\Admin\OffersSectionController;
 use App\Http\Controllers\Api\V1\Admin\ProductController;
+use App\Http\Controllers\Api\V1\Admin\ReviewController;
+use App\Http\Controllers\Api\V1\Admin\ReviewsSectionController;
 use App\Http\Controllers\Api\V1\Admin\UploadController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BannersController;
 use App\Http\Controllers\Api\V1\MenuController;
 use App\Http\Controllers\Api\V1\OffersController;
+use App\Http\Controllers\Api\V1\ReviewsController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -30,6 +33,7 @@ Route::middleware('throttle:public')->group(function () {
     Route::get('menu', MenuController::class)->name('menu');
     Route::get('offers', OffersController::class)->name('offers');
     Route::get('banners', BannersController::class)->name('banners');
+    Route::get('reviews', ReviewsController::class)->name('reviews');
 });
 
 Route::prefix('auth')->name('auth.')->group(function () {
@@ -77,4 +81,13 @@ Route::prefix('admin')->name('admin.')->middleware('auth:sanctum')->group(functi
     Route::patch('banners/{banner}', [BannerController::class, 'patch'])->name('banners.patch');
     Route::delete('banners/{banner}', [BannerController::class, 'destroy'])->name('banners.destroy');
     Route::post('banners/{banner}/move', [BannerController::class, 'move'])->name('banners.move');
+
+    // {review} is the database id. PUT = whole review, PATCH = shown/hidden from the list.
+    Route::get('reviews', [ReviewController::class, 'index'])->name('reviews.index');
+    Route::post('reviews', [ReviewController::class, 'store'])->name('reviews.store');
+    Route::put('reviews/{review}', [ReviewController::class, 'update'])->name('reviews.update');
+    Route::patch('reviews/{review}', [ReviewController::class, 'patch'])->name('reviews.patch');
+    Route::delete('reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
+    Route::post('reviews/{review}/move', [ReviewController::class, 'move'])->name('reviews.move');
+    Route::patch('reviews-section', ReviewsSectionController::class)->name('reviews-section.update');
 });
