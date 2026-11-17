@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\Admin\OffersSectionController;
 use App\Http\Controllers\Api\V1\Admin\ProductController;
 use App\Http\Controllers\Api\V1\Admin\ReviewController;
 use App\Http\Controllers\Api\V1\Admin\ReviewsSectionController;
+use App\Http\Controllers\Api\V1\Admin\SiteInfoController as AdminSiteInfoController;
 use App\Http\Controllers\Api\V1\Admin\UploadController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BannersController;
@@ -18,6 +19,7 @@ use App\Http\Controllers\Api\V1\HeroController;
 use App\Http\Controllers\Api\V1\MenuController;
 use App\Http\Controllers\Api\V1\OffersController;
 use App\Http\Controllers\Api\V1\ReviewsController;
+use App\Http\Controllers\Api\V1\SiteInfoController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -40,6 +42,7 @@ Route::middleware('throttle:public')->group(function () {
     Route::get('reviews', ReviewsController::class)->name('reviews');
     Route::get('hero', HeroController::class)->name('hero');
     Route::get('about', AboutController::class)->name('about');
+    Route::get('site-info', SiteInfoController::class)->name('site-info');
 });
 
 Route::prefix('auth')->name('auth.')->group(function () {
@@ -102,4 +105,8 @@ Route::prefix('admin')->name('admin.')->middleware('auth:sanctum')->group(functi
     Route::put('hero', [AdminHeroController::class, 'update'])->name('hero.update');
     Route::get('about', [AdminAboutController::class, 'show'])->name('about.show');
     Route::put('about', [AdminAboutController::class, 'update'])->name('about.update');
+
+    // Phones and branches saved by id inside the whole record (API-CONTRACT §4.1).
+    Route::get('site-info', [AdminSiteInfoController::class, 'show'])->name('site-info.show');
+    Route::put('site-info', [AdminSiteInfoController::class, 'update'])->name('site-info.update');
 });

@@ -1,5 +1,8 @@
 <?php
 
+use App\Models\Branch;
+use App\Models\OrderingSetting;
+use App\Models\Phone;
 use App\Models\Setting;
 use App\Models\Upload;
 use App\Models\User;
@@ -124,4 +127,32 @@ function storeReviewsSection(array $overrides = []): array
     Setting::updateOrCreate(['key' => 'reviews_section'], ['value' => $value]);
 
     return $value;
+}
+
+/**
+ * The restaurant as the seeder leaves it (docs/DATABASE.md §3 Restaurant):
+ * two branches, two public numbers, one staff number per branch, delivery on
+ * to the first public number, tables off. Returns the rows by name.
+ *
+ * @return array{qanawat: Branch, mehwari: Branch, main: Phone, second: Phone, qanawatStaff: Phone, mehwariStaff: Phone, ordering: OrderingSetting}
+ */
+function seedRestaurant(): array
+{
+    Setting::updateOrCreate(['key' => 'site_info'], ['value' => [
+        'tagline' => "شاورما بطعم أصيل من قلب السويداء،\nبخبرة شيفنا وكرم أهل الجبل.",
+        'openingHours' => 'يومياً من 9 الصبح لـ 12 بالليل',
+        'openingHoursSchema' => ['Mo-Su 09:00-24:00'],
+    ]]);
+
+    $qanawat = Branch::factory()->create(['slug' => 'qanawat-road', 'name' => 'فرع طريق قنوات', 'address' => 'السويداء، طريق قنوات', 'position' => 1]);
+    $mehwari = Branch::factory()->create(['slug' => 'al-mehwari', 'name' => 'فرع المحوري', 'address' => 'السويداء، المحوري', 'position' => 2]);
+
+    $main = Phone::factory()->create(['number' => '+963930539614', 'position' => 1]);
+    $second = Phone::factory()->create(['number' => '+963980785608', 'position' => 2]);
+    $qanawatStaff = Phone::factory()->forBranch($qanawat)->create(['number' => '+963930000001', 'position' => 3]);
+    $mehwariStaff = Phone::factory()->forBranch($mehwari)->create(['number' => '+963930000002', 'position' => 4]);
+
+    $ordering = OrderingSetting::factory()->withDelivery($main)->create();
+
+    return compact('qanawat', 'mehwari', 'main', 'second', 'qanawatStaff', 'mehwariStaff', 'ordering');
 }

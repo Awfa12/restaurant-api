@@ -150,6 +150,21 @@ it('serves the mock hero and «من نحن» from GET /hero and GET /about, the 
         ->and(OwnUploadUrl::accepts($served['image']['src']))->toBeTrue();
 });
 
+it('serves the mock site info from GET /site-info: same texts, branches and public phones, never the staff phones', function () {
+    $this->seed();
+    $mock = SeedData::read('site-info');
+    // Phone ids don't survive seeding (database ids); the staff phones (with a branchId) are private.
+    $publicMockPhones = array_values(array_map(
+        fn (array $phone) => Arr::except($phone, 'id'),
+        array_filter($mock['phones'], fn (array $phone) => ! isset($phone['branchId'])),
+    ));
+
+    $served = $this->getJson('/api/v1/site-info')->assertOk()->json();
+
+    expect(Arr::except($served, 'phones'))->toBe(Arr::except($mock, 'phones'))
+        ->and(array_map(fn (array $phone) => Arr::except($phone, 'id'), $served['phones']))->toBe($publicMockPhones);
+});
+
 it('serves the mock banners from GET /banners: same texts, alt, buttons and targets, in order, photos as our uploads', function () {
     $this->seed();
     // The mock's ids don't survive seeding (database ids), and photos become our uploads.

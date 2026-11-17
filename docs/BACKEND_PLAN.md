@@ -156,8 +156,8 @@ PR #16 (branch `feat/phase-8-reviews`), on staging 2026-11-17. Frontend: reviews
 
 **Done when:** the review endpoints match the contract, with tests, and run on staging. ✅
 
-### Phase 9 — Hero + About `IN PROGRESS` · size S
-Branch `feat/phase-9-home`: code and tests done; left: the PR, `staging` + `bash bin/deploy.sh`, then the frontend turns `home` on (hero and About together). Decisions 9.1–9.3 (2026-11-17, §6). No migration: the `hero` and `about` settings rows are seeded since Phase 2.
+### Phase 9 — Hero + About `DONE` · size S
+PR #17 (branch `feat/phase-9-home`), on staging 2026-11-17. Frontend: hero and About live after the dashboard pass on the demo (her PR #56). Decisions 9.1–9.3 (2026-11-17, §6). No migration: the `hero` and `about` settings rows are seeded since Phase 2.
 - ✅ **Public `GET /hero`, `GET /about`** (in `throttle:public`): her `HeroContent` / `AboutContent` exactly (an empty `badge` left out, the About photo as a URL). Nothing is hidden, so the admin GETs return the same.
 - ✅ **Admin:** `GET` + **`PUT /admin/hero`** and **`PUT /admin/about`**: the whole record (a missing `badge` is cleared), stored through `SectionSettings::replace()` (`App\Support\HeroContent`, `AboutContent`).
 - ✅ **Validation** (§4): `checkHeroInput` → `UpdateHeroRequest` (exactly 3 features; each `features.<i>.label` ≤ 28 and `.icon` one of the new `App\Enums\FeatureIcon`); `checkAboutInput` → `UpdateAboutRequest` (eyebrow ≤ **40** and title through the shared section-text rules with About's limits and `partial: false`; 1–4 paragraphs, each ≤ 320 without `**` with its error on `paragraphs.<i>`, an empty one refused, not dropped; closing ≤ 120 with marks; the photo required and ours).
@@ -165,15 +165,23 @@ Branch `feat/phase-9-home`: code and tests done; left: the PR, `staging` + `bash
 - ✅ **Shared pieces:** `sectionTextRules($limits, $partial)` (2 options, `isEnabled` moved to the two section requests); the trait `Concerns\ChecksContentImage` (a `{ src, alt }` photo, error on `image`) now used by banners and About.
 - ✅ Tests: `HomeContentTest` (public), `Admin/HeroControllerTest`, `Admin/AboutControllerTest`, `SeedDataTest` (seeded hero and About through the public GETs = her mock). The "whole save needs every field" rule was first tested with `eyebrow: null`, which also passes with the partial rules (a present key still runs `required`); the test now leaves the key out, and fails when the rule is broken (checked). 363 tests.
 
-**Frontend can switch:** hero + About (her D7g, the `home` area): `API_AREAS` gets `home` once this is on staging.
+**Frontend can switch:** hero + About. ✅ Switched (`API_AREAS=…,home` on Vercel Production).
 
-**Done when:** the hero and About endpoints match the contract, with tests, and run on staging.
+**Done when:** the hero and About endpoints match the contract, with tests, and run on staging. ✅
 
-### Phase 10 — Site info `TODO` · size M
-The trickiest rules.
-- Public `GET /site-info`: **branch staff phones left out**.
-- Admin `PUT /admin/site-info`: whole record; phones and branches synced by id (new = `id: ""`; new branches get a slug); deleting a branch deletes its staff phones and dine-in settings; `409` when delivery or a branch with tables would be left without a WhatsApp number.
-- Validation: `checkSiteInfoInput` (phone format `+963…`, social link domains, hours text + schema together).
+### Phase 10 — Site info `IN PROGRESS` · size M
+Branch `feat/phase-10-site-info`: code and tests done; left: the PR, then Phase 11, then **both** on staging before the frontend turns `info` and `ordering` on together (her `API_AREAS` refuses one without the other). Decisions 10.1–10.3 (2026-11-17, §6). No migration.
+- ✅ **Public `GET /site-info`** (in `throttle:public`): her `SiteInfo` with **the branch staff phones left out** (tested: their numbers never appear in the body). Phones and branches in their saved order, branch ids = slugs. **3 queries** (tested).
+- ✅ **Admin:** `GET /admin/site-info` = everything, a staff phone with its `branchId` (slug); **`PUT /admin/site-info`** = the whole record in one transaction (`App\Actions\SaveSiteInfo`):
+  - **saved by id** (§4.1): sent with an id → updated, `id: ""` → created, missing → deleted; order = the order sent (it decides the branch phone that gets table orders);
+  - a new branch takes its `slug` (`branches.<i>.slug`) or `branch-xxxxxxxx`; **a saved branch's slug never changes**, even if one is sent (printed in the QR codes);
+  - a deleted branch takes its staff phones (cascade) and table settings (branch columns) with it; a sent phone of a deleted branch is dropped (decision 10.2);
+  - **phones are synced before branches:** a staff phone moved to the restaurant in the same save that deletes its old branch would otherwise go with the cascade (tested; the test fails with the order swapped);
+  - **`409`** (her `orderingConflicts`): delivery on and its phone removed or without WhatsApp; a branch with tables on left without a WhatsApp phone of its own (named in the message). Nothing is written on a `409` (tested).
+- ✅ **Validation** (§4): `checkSiteInfoInput` → `UpdateSiteInfoRequest` (tagline ≤ 120 and ≤ 3 lines; ≥ 1 restaurant phone, ≤ 10; numbers `+963` + 8–9 digits; no number twice per owner; 1–6 branches, name ≤ 30, address ≤ 80, `mapUrl` https; hours text and schema together; social links normalized as her `normalizeSocialUrl`, ported to `App\Support\SocialLinks`). Ids not ours → `422` (decision 10.1); server-only guards: hours text ≤ 80, one link per platform (decision 10.3).
+- ✅ Tests: `SiteInfoControllerTest` (public), `Admin/SiteInfoControllerTest` (round trip GET → PUT unchanged; every save-by-id case; the `409`s; 25 validation cases), `Unit/Support/SocialLinksTest`, `SeedDataTest` (seeded info through the public GET = her mock without the staff phones). 419 tests.
+
+**Done when:** the site-info endpoints match the contract, with tests, and run on staging (with Phase 11).
 
 ### Phase 11 — Ordering settings `TODO` · size M
 - Public `GET /ordering`: only enabled types and branches, with the WhatsApp numbers resolved.
@@ -211,7 +219,7 @@ The trickiest rules.
 | `checkBannerInput` | 7 ✅ | `SaveBannerRequest` (`POST` and `PUT`) |
 | `checkReviewInput`, `checkReviewsSettings` | 8 ✅ | `SaveReviewRequest` (`POST` and `PUT`), `UpdateReviewsSectionRequest` |
 | `checkHeroInput`, `checkAboutInput` | 9 ✅ | `UpdateHeroRequest`, `UpdateAboutRequest` |
-| `checkSiteInfoInput` | 10 | `UpdateSiteInfoRequest` + `SaveSiteInfo` action (409 rules) |
+| `checkSiteInfoInput` | 10 ✅ | `UpdateSiteInfoRequest` + `SaveSiteInfo` action (409 rules) |
 | `checkOrderingInput` | 11 | `UpdateOrderingRequest` + `SaveOrdering` action |
 
 The limits (`PRODUCT_LIMITS`, `OFFER_LIMITS`, …) are constants in that file; copy the numbers, keep the Arabic texts word for word, and use the field keys from API-CONTRACT §4.
@@ -253,6 +261,11 @@ The limits (`PRODUCT_LIMITS`, `OFFER_LIMITS`, …) are constants in that file; c
 | 9.1 | About photo alt text | 9 | **Decided 2026-11-17: the sent `image.alt`; missing → the title without its markers** (what her form sends for a new photo; same idea as 7.2) |
 | 9.2 | Section-text rules for About | 9 | **Decided 2026-11-17: one `sectionTextRules($limits, $partial)`** for offers, reviews and About (About: eyebrow 40, and `required` for a whole save, not `sometimes`) · ~~a copy in the About request~~ |
 | 9.3 | Where the hero and About rows live | 9 | **Decided 2026-11-17: the `SectionSettings` base**, with a new `replace()` for a whole save · ~~a second settings helper~~ |
+| 10.1 | Phone or branch ids that aren't ours in a site-info save | 10 | **Decided 2026-11-17: `422`**, like sizes: `phones.<i>.id` «هالرقم مش موجود، حدّث الصفحة», `branches.<i>.id` «هالفرع مش موجود، حدّث الصفحة» (new texts; her form can't send them) |
+| 10.2 | A phone pointing at a branch | 10 | **Decided 2026-11-17:** a branch deleted in the same save → the phone is dropped (as her code); an unknown branch → `422` on `phones.<i>.branchId` |
+| 10.3 | Guards her form never hits | 10 | **Decided 2026-11-17: hours text ≤ 80, one social link per platform** («في رابط تاني لنفس المنصة»), so a direct call can't store junk |
+| 11.2 | A branch left out of `PUT /admin/ordering` | 11 | **Decided 2026-11-17: switched off, its table count kept** (her form always sends every branch) |
+| 11.3 | The delivery phone while delivery is off | 11 | **Decided 2026-11-17: kept if it's a restaurant phone, else stored empty** (`phoneId: ""` in the GET), as her code only checks it while delivery is on |
 | 11.1 | Public `GET /ordering` keys | 11 | **Decided 2026-11-17: her `OrderingOptions`** without `restaurantName` / `timeZone`: `{ delivery: { fee, whatsApp } \| null, dineInBranches: [{ id, name, tableCount, whatsApp }], message, thankYou }` |
 
 A decision that changes the API's behaviour also goes into `API-CONTRACT.md` (PR to the frontend repo).
