@@ -2,7 +2,7 @@
 
 > What this backend is, what's been decided, where it stands, and what's next. Keep it short and current; update it at the end of each feature.
 
-**Last updated:** 2026-11-17 · **Plan:** [BACKEND_PLAN.md](BACKEND_PLAN.md) (phases 0–12) · **Done:** Phase 0 foundation (PR #2) · **Done:** Phase 1 database (PR #3) · **Done:** Phase 3 auth (PR #4) · **Done:** Phase 4 menu: 4a uploads (PR #5), 4b categories (PR #6), 4c products (PR #7), 4d public `GET /menu` (PR #8) · **Contract amended** with Phases 1, 3 and 4 (frontend PR #39, merged) · **Done:** Phase 2 seed data (PR #10) · **Done:** Phase 5, the demo server on Hostinger (PRs #11, #12; contract amended in frontend PRs #42, #43) · **Milestone M1 reached (2026-11-12):** the frontend's login and whole menu area run on the demo server (her D7a–D7c, frontend PRs #44–#46), live on her Vercel showcase · **In progress:** Phase 6 offers (branch `feat/phase-6-offers`, code and tests done; 244 tests passing) · **Frontend ahead of us (2026-11-17):** her PRs #47–#49 wired every area to the API, so her Vercel builds fail until she adds `API_AREAS` (§5.3)
+**Last updated:** 2026-11-17 · **Plan:** [BACKEND_PLAN.md](BACKEND_PLAN.md) (phases 0–12) · **Done:** Phase 0 foundation (PR #2) · **Done:** Phase 1 database (PR #3) · **Done:** Phase 3 auth (PR #4) · **Done:** Phase 4 menu: 4a uploads (PR #5), 4b categories (PR #6), 4c products (PR #7), 4d public `GET /menu` (PR #8) · **Contract amended** with Phases 1, 3 and 4 (frontend PR #39, merged) · **Done:** Phase 2 seed data (PR #10) · **Done:** Phase 5, the demo server on Hostinger (PRs #11, #12; contract amended in frontend PRs #42, #43) · **Milestone M1 reached (2026-11-12):** the frontend's login and whole menu area run on the demo server (her D7a–D7c, frontend PRs #44–#46), live on her Vercel showcase · **Done:** Phase 6 offers (PR #14; live on the showcase after her #50, #51, #53) · **In progress:** Phase 7 banners (branch `feat/phase-7-banners`, code and tests done; 287 tests passing) · Her areas turn on one by one through `API_AREAS` (§5.3); Vercel Production has `menu,offers`
 
 ## 1. What this is
 
@@ -66,11 +66,12 @@ Full details in the contract; the short version:
 | Categories | ✅ Phase 4b: `/admin/categories` list, create, update (name, slug, photo), move, delete (`409` with products). Ordered lists use `App\Actions\OrderedList`; slugs `App\Support\Slugs` |
 | Products | ✅ Phase 4c: `/admin/products` list, create, `PUT` full save (sizes synced by id), `PATCH` quick change, delete; `/admin/best-sellers/{id}/move`. `App\Actions\SaveProduct`, `App\Actions\BestSellers` |
 | Public menu | ✅ Phase 4d: `GET /api/v1/menu` (no token), her `MenuSection[]`, 3 queries |
-| Offers | 🟡 Phase 6 (branch): public `GET /offers` (her `OffersContent`, active only, raw `null` when off or empty); `/admin/offers` flat GET, `POST`, `PUT`, `PATCH { isActive }`, `DELETE`, move; `PATCH /admin/offers-section`. `App\Support\OffersSection`, `App\Rules\MarkedText` |
+| Offers | ✅ Phase 6: public `GET /offers` (her `OffersContent`, active only, raw `null` when off or empty); `/admin/offers` flat GET, `POST`, `PUT`, `PATCH { isActive }`, `DELETE`, move; `PATCH /admin/offers-section`. `App\Support\OffersSection`, `App\Rules\MarkedText` |
+| Banners | 🟡 Phase 7 (branch): public `GET /banners` (her `MenuBanner[]`, active, stored targets, a button that leads nowhere left out, 5 queries); `/admin/banners` list (gone target → `""`), `POST`, `PUT`, `PATCH { isActive }`, `DELETE`, move |
 | Seed data | ✅ Phase 2: `database/seeders/data/` (8 JSON files + 21 photos, exported from her mock files with `composer seed:export`; needs Node 22 locally, never on the server). `php artisan migrate:fresh --seed` locally; refuses on a database that has content |
 | Sessions / queue | `array` / `sync` (no `sessions` or queue tables; the daily jobs run from cron: token prune and uploads prune) |
 | Tests | Admin tests sign in with `actingAsAdmin()` (`tests/Pest.php`, a Sanctum token): Laravel's `actingAs()` uses the session guard, which Sanctum doesn't check here. `APP_DEBUG=false` in `phpunit.xml`, so errors have the production shape (`{ message }`, no trace) |
-| Git | PR #1 (docs), PR #2 (Phase 0), PR #3 (Phase 1), PR #4 (Phase 3), PR #5 (Phase 4a), PR #6 (Phase 4b), PR #7 (Phase 4c), PR #8 (Phase 4d), PR #9 (docs), PR #10 (Phase 2), PR #11 (Phase 5), PR #12 (deploy caches fix) merged; branch `staging` = the demo server; remote `github.com/Awfa12/restaurant-api` |
+| Git | PR #1 (docs), PR #2 (Phase 0), PR #3 (Phase 1), PR #4 (Phase 3), PR #5 (Phase 4a), PR #6 (Phase 4b), PR #7 (Phase 4c), PR #8 (Phase 4d), PR #9 (docs), PR #10 (Phase 2), PR #11 (Phase 5), PR #12 (deploy caches fix), PR #13 (docs), PR #14 (Phase 6) merged; branch `staging` = the demo server; remote `github.com/Awfa12/restaurant-api` |
 
 ## 5. Next steps
 
@@ -79,8 +80,9 @@ The full sequence is in [BACKEND_PLAN.md](BACKEND_PLAN.md):
 1. ~~Phase 0 foundation~~ (PR #2) · ~~Phase 1 database~~ (PR #3) · ~~Phase 3 auth~~ (PR #4) · ~~Phase 4a uploads~~ (PR #5) · ~~Phase 4b categories~~ (PR #6) · ~~Phase 4c products~~ (PR #7) · ~~Phase 4d public menu~~ (PR #8): **Phase 4 done**. ~~Contract PR~~ (frontend PR #39, merged: §5.1).
 2. ~~Phase 2 seed data~~ (PR #10): we export the mock data ourselves (`composer seed:export`); `migrate:fresh --seed` reproduces her content and slugs.
 3. ~~Phase 5, the demo server~~ (PRs #11, #12; contract: frontend PRs #42, #43): up, seeded, checked with the key. ~~Milestone M1~~ (2026-11-12): her D7a login (#44), D7b public menu (#45), D7c dashboard menu area (#46), live on the Vercel showcase. Left for the user: the cron in hPanel ([DEPLOYMENT.md](DEPLOYMENT.md) §3.7); optionally remove `DASHBOARD_USERNAME` / `DASHBOARD_PASSWORD` from Vercel (unused now that login goes through Laravel).
-4. **Phase 6: offers** (branch `feat/phase-6-offers`, code and tests done): open the PR, merge, fast-forward `staging`, `bash bin/deploy.sh`, then tell her `offers` can go into `API_AREAS` (her D7d is already written).
-5. **Phases 7–11** in order: banners, reviews, hero + About, site info, ordering; each one deployed before she turns that area on. **Site info and ordering switch on together** (ordering points at the phone and branch ids of site info).
+4. ~~Phase 6: offers~~ (PR #14): on staging; her #53 turned it on (`API_AREAS=menu,offers`).
+5. **Phase 7: banners** (branch `feat/phase-7-banners`, code and tests done): the PR, merge, fast-forward `staging`, `bash bin/deploy.sh`, then her session checks the real shapes, the user's dashboard pass, `API_AREAS=menu,offers,banners`.
+6. **Phases 8–11** in order: reviews, hero + About, site info, ordering; each one deployed before she turns that area on. **Site info and ordering switch on together** (ordering points at the phone and branch ids of site info).
 
 ### 5.3 The frontend is ahead (2026-11-17)
 

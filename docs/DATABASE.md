@@ -185,7 +185,7 @@ The Resource rebuilds the frontend shape: `optionGroups: [{ id: "size", name: si
 | `is_active` | boolean | |
 | `position` | smallint unsigned | |
 
-When the target is deleted, its key becomes null: the public `GET /banners` drops the button (the slide stays), and the admin GET sends the target with an empty id (`productId: ""`) so the dashboard shows "target gone" (decision 1.5; to add to the contract).
+When the target is deleted, its key becomes null: the public `GET /banners` drops the button (the slide stays), and the admin GET sends the target with an empty id (`productId: ""`) so the dashboard shows "target gone" (decision 1.5, in API-CONTRACT §4 Banners). The public GET also drops a button to a category with no products or to hidden offers (decision 7.3).
 
 **`reviews`**
 

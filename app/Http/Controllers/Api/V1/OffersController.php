@@ -24,15 +24,14 @@ class OffersController extends Controller
     {
         $section = OffersSection::get();
 
-        $offers = $section['isEnabled']
-            ? $orderedList->ordered(Offer::query()->where('is_active', true))->get()
-            : collect();
-
-        if ($offers->isEmpty()) {
+        if (! OffersSection::isShown($section)) {
             // A raw `null` body: response()->json(null) would send `{}`.
             return new JsonResponse('null', 200, [], 0, true);
         }
 
-        return new OffersContentResource(['section' => $section, 'offers' => $offers]);
+        return new OffersContentResource([
+            'section' => $section,
+            'offers' => $orderedList->ordered(Offer::query()->where('is_active', true))->get(),
+        ]);
     }
 }

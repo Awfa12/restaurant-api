@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Admin\BannerController;
 use App\Http\Controllers\Api\V1\Admin\BestSellerController;
 use App\Http\Controllers\Api\V1\Admin\CategoryController;
 use App\Http\Controllers\Api\V1\Admin\OfferController;
@@ -7,6 +8,7 @@ use App\Http\Controllers\Api\V1\Admin\OffersSectionController;
 use App\Http\Controllers\Api\V1\Admin\ProductController;
 use App\Http\Controllers\Api\V1\Admin\UploadController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\BannersController;
 use App\Http\Controllers\Api\V1\MenuController;
 use App\Http\Controllers\Api\V1\OffersController;
 use Illuminate\Support\Facades\Route;
@@ -27,6 +29,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('throttle:public')->group(function () {
     Route::get('menu', MenuController::class)->name('menu');
     Route::get('offers', OffersController::class)->name('offers');
+    Route::get('banners', BannersController::class)->name('banners');
 });
 
 Route::prefix('auth')->name('auth.')->group(function () {
@@ -66,4 +69,12 @@ Route::prefix('admin')->name('admin.')->middleware('auth:sanctum')->group(functi
     Route::delete('offers/{offer:slug}', [OfferController::class, 'destroy'])->name('offers.destroy');
     Route::post('offers/{offer:slug}/move', [OfferController::class, 'move'])->name('offers.move');
     Route::patch('offers-section', OffersSectionController::class)->name('offers-section.update');
+
+    // {banner} is the database id. PUT = whole slide, PATCH = on/off from the list.
+    Route::get('banners', [BannerController::class, 'index'])->name('banners.index');
+    Route::post('banners', [BannerController::class, 'store'])->name('banners.store');
+    Route::put('banners/{banner}', [BannerController::class, 'update'])->name('banners.update');
+    Route::patch('banners/{banner}', [BannerController::class, 'patch'])->name('banners.patch');
+    Route::delete('banners/{banner}', [BannerController::class, 'destroy'])->name('banners.destroy');
+    Route::post('banners/{banner}/move', [BannerController::class, 'move'])->name('banners.move');
 });

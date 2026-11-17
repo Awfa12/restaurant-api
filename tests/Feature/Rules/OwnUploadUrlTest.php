@@ -28,11 +28,11 @@ it('refuses URLs that are not one of our uploads', function (Closure $url) {
 
     expect(passesOwnUploadUrl($url()))->toBeFalse();
 })->with([
-    'another host' => fn () => fn () => 'https://evil.example/uploads/known.webp',
-    'our host, a path never uploaded' => fn () => fn () => PublicImage::url('uploads/never-uploaded.webp'),
-    'our host, outside the uploads folder' => fn () => fn () => PublicImage::url('secrets/known.webp'),
-    'path traversal' => fn () => fn () => PublicImage::url('uploads/../uploads/known.webp'),
-    'not a string' => fn () => fn () => ['uploads/known.webp'],
+    'another host' => fn () => 'https://evil.example/uploads/known.webp',
+    'our host, a path never uploaded' => fn () => PublicImage::url('uploads/never-uploaded.webp'),
+    'our host, outside the uploads folder' => fn () => PublicImage::url('secrets/known.webp'),
+    'path traversal' => fn () => PublicImage::url('uploads/../uploads/known.webp'),
+    'not a string' => fn () => ['uploads/known.webp'],
 ]);
 
 it('gives the Arabic message', function () {

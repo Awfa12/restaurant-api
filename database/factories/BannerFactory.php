@@ -35,6 +35,16 @@ class BannerFactory extends Factory
     }
 
     /**
+     * A slide switched off (hidden from the public site).
+     */
+    public function inactive(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_active' => false,
+        ]);
+    }
+
+    /**
      * A button that goes to the offers section.
      */
     public function targetingOffers(): static
